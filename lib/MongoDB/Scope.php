@@ -9,9 +9,6 @@ use MongoCursor;
 
 class Scope
 {
-    const MODE_READ = 1;
-    const MODE_WRITE = 2;
-
     /**
      * The batch size for a read operation.
      *
@@ -81,13 +78,6 @@ class Scope
      * @var array
      */
     private $min;
-
-    /**
-     * The current mode for this Scope.
-     *
-     * @var integer
-     */
-    private $mode;
 
     /**
      * The query selector array.
@@ -178,8 +168,6 @@ class Scope
      */
     public function comment($comment)
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->comment = $comment;
 
         return $this;
@@ -193,8 +181,6 @@ class Scope
      */
     public function count()
     {
-        $this->requireMode(self::MODE_READ);
-
         return $this->createCursor()->count();
     }
 
@@ -205,8 +191,6 @@ class Scope
      */
     public function explain()
     {
-        $this->requireMode(self::MODE_READ);
-
         return $this->createCursor()->explain();
     }
 
@@ -230,8 +214,6 @@ class Scope
      */
     public function get()
     {
-        $this->requireMode(self::MODE_READ);
-
         return $this->createCursor();
     }
 
@@ -242,8 +224,6 @@ class Scope
      */
     public function getOne()
     {
-        $this->requireMode(self::MODE_READ);
-
         // @todo Should this respect a skip option?
         return $this->createCursor()->limit(-1)->getNext();
     }
@@ -256,8 +236,6 @@ class Scope
      */
     public function hint($index)
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->hint = $hint;
 
         return $this;
@@ -272,8 +250,6 @@ class Scope
      */
     public function insert($document, array $options = array())
     {
-        $this->requireMode(self::MODE_WRITE);
-
         if (isset($this->writeConcern)) {
             $options = array_merge(array('w' => $this->writeConcern), $options);
         }
@@ -303,8 +279,6 @@ class Scope
      */
     public function max(array $max)
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->max = $max;
 
         return $this;
@@ -319,8 +293,6 @@ class Scope
      */
     public function maxScan($maxScan)
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->maxScan = (integer) $maxScan;
 
         return $this;
@@ -334,8 +306,6 @@ class Scope
      */
     public function maxTime($maxTime)
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->maxTime = (integer) $maxTime;
 
         return $this;
@@ -350,8 +320,6 @@ class Scope
      */
     public function min(array $min)
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->min = $min;
 
         return $this;
@@ -366,8 +334,6 @@ class Scope
      */
     public function remove(array $options = array())
     {
-        $this->requireMode(self::MODE_WRITE);
-
         $defaultOptions = array();
 
         if ($this->limit > 1) {
@@ -396,8 +362,6 @@ class Scope
      */
     public function replace($newObj, array $options = array())
     {
-        $this->requireMode(self::MODE_WRITE);
-
         if ($this->hasUpdateOperator($newObj)) {
             throw new InvalidArgumentException('replace() does not support update operators in $newObj');
         }
@@ -429,8 +393,6 @@ class Scope
      */
     public function returnKey()
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->returnKey = true;
 
         return $this;
@@ -445,8 +407,6 @@ class Scope
      */
     public function save($document, array $options = array())
     {
-        $this->requireMode(self::MODE_WRITE);
-
         if (isset($this->writeConcern)) {
             $options = array_merge(array('w' => $this->writeConcern), $options);
         }
@@ -462,8 +422,6 @@ class Scope
      */
     public function showDiskLoc()
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->showDiskLoc = true;
 
         return $this;
@@ -477,8 +435,6 @@ class Scope
      */
     public function skip($skip)
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->skip = (integer) $skip;
 
         return $this;
@@ -492,8 +448,6 @@ class Scope
      */
     public function snapshot()
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->snapshot = true;
 
         return $this;
@@ -507,9 +461,6 @@ class Scope
      */
     public function sort(array $sort)
     {
-        // @todo This should be allowed for findAndModify write operations
-        $this->requireMode(self::MODE_READ);
-
         $this->sort = $sort;
 
         return $this;
@@ -526,8 +477,6 @@ class Scope
      */
     public function update($newObj, array $options = array())
     {
-        $this->requireMode(self::MODE_WRITE);
-
         // @todo Empty $newObj should be allowed
         if ( ! $this->hasUpdateOperator($newObj)) {
             throw new InvalidArgumentException('update() requires update operators in $newObj');
@@ -560,8 +509,6 @@ class Scope
      */
     public function withBatchSize($batchSize)
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->batchSize = $batchSize;
 
         return $this;
@@ -576,8 +523,6 @@ class Scope
      */
     public function withReadPreference($readPreference, array $tags = array())
     {
-        $this->requireMode(self::MODE_READ);
-
         $this->readPreference = $readPreference;
         $this->readPreferenceTags = $tags;
 
@@ -592,8 +537,6 @@ class Scope
      */
     public function withWriteConcern($writeConcern)
     {
-        $this->requireMode(self::MODE_WRITE);
-
         $this->writeConcern = $writeConcern;
 
         return $this;
@@ -674,30 +617,5 @@ class Scope
         reset($newObj);
 
         return strncmp('$', key($newObj), 1) === 0;
-    }
-
-    /**
-     * Require a mode, or set the mode if it is not initialized.
-     *
-     * @param integer $mode
-     * @throws BadMethodCallException if the required mode is not satisifed
-     */
-    private function requireMode($mode)
-    {
-        if ( ! isset($this->mode)) {
-            $this->mode = $mode;
-        }
-
-        if ($this->mode === $mode) {
-            return;
-        }
-
-        $mode = ($mode === self::MODE_WRITE) ? 'write' : 'read';
-
-        throw new BadMethodCallException(sprintf(
-            '%s requires a %s scope',
-            xdebug_call_function(),
-            $mode === self::MODE_WRITE ? 'write' : 'read'
-        ));
     }
 }
