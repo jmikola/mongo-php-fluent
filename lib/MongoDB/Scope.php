@@ -2,10 +2,14 @@
 
 namespace MongoDB;
 
+use MongoDB\Exception\ResultException;
+use MongoDB\Options\CursorOptions;
+use MongoDB\Options\QueryOptions;
+use MongoDB\Options\WriteOptions;
 use BadMethodCallException;
 use InvalidArgumentException;
 use MongoCollection;
-use MongoCursor;
+use UnexpectedValueException;
 
 class Scope
 {
@@ -24,11 +28,11 @@ class Scope
     private $collection;
 
     /**
-     * The $comment cursor option for a read operation.
+     * The cursor options.
      *
-     * @var string
+     * @var array
      */
-    private $comment;
+    private $cursorOptions = array();
 
     /**
      * The query projection.
@@ -38,13 +42,6 @@ class Scope
     private $fields = array();
 
     /**
-     * The index hint for a read or write operation.
-     *
-     * @var array|string
-     */
-    private $hint;
-
-    /**
      * The limit for a read or write operation.
      *
      * @var integer
@@ -52,39 +49,18 @@ class Scope
     private $limit;
 
     /**
-     * The $max cursor option for a read operation.
-     *
-     * @var array
-     */
-    private $max;
-
-    /**
-     * The $maxScan cursor option for a read operation.
-     *
-     * @var integer
-     */
-    private $maxScan;
-
-    /**
-     * The $maxTime cursor option for a read operation.
-     *
-     * @var integer
-     */
-    private $maxTime;
-
-    /**
-     * The $min cursor option for a read operation.
-     *
-     * @var array
-     */
-    private $min;
-
-    /**
      * The query selector array.
      *
      * @var array
      */
     private $query = array();
+
+    /**
+     * The query options.
+     *
+     * @var array
+     */
+    private $queryOptions = array();
 
     /**
      * The read preference.
@@ -101,32 +77,11 @@ class Scope
     private $readPreferenceTags = array();
 
     /**
-     * The $returnKey cursor option for a read operation.
-     *
-     * @var boolean
-     */
-    private $returnKey;
-
-    /**
-     * The $showDiskLoc cursor option for a read operation.
-     *
-     * @var boolean
-     */
-    private $showDiskLoc;
-
-    /**
      * The skip for a read operation.
      *
      * @var integer
      */
     private $skip;
-
-    /**
-     * The $snapshot cursor option for a read operation.
-     *
-     * @var boolean
-     */
-    private $snapshot;
 
     /**
      * The sort order.
@@ -136,14 +91,14 @@ class Scope
     private $sort;
 
     /**
-     * The write concern.
+     * The write options.
      *
-     * @var integer|string
+     * @var array
      */
-    private $writeConcern;
+    private $writeOptions = array();
 
     /**
-     * The $upsert option for a write operation.
+     * The upsert option for a update operation or findandModify command.
      *
      * @var boolean
      */
@@ -157,20 +112,6 @@ class Scope
     public function __construct(MongoCollection $collection)
     {
         $this->collection = $collection;
-    }
-
-    /**
-     * Set the $comment cursor option for a read operation.
-     *
-     * @see http://docs.mongodb.org/manual/reference/operator/comment/
-     * @param string $comment
-     * @return self
-     */
-    public function comment($comment)
-    {
-        $this->comment = $comment;
-
-        return $this;
     }
 
     /**
@@ -210,7 +151,7 @@ class Scope
     /**
      * Return the result cursor for a read operation.
      *
-     * @return MongoCursor
+     * @return \MongoCursor
      */
     public function get()
     {
@@ -229,32 +170,53 @@ class Scope
     }
 
     /**
-     * Set the index hint for a read operation.
+     * Remove one document matching the current scope and return it.
      *
-     * @param array|string $index
-     * @return self
+     * @return array|null
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     * @throws ResultException if the findAndModify command fails
      */
-    public function hint($index)
+    public function getOneAndRemove()
     {
-        $this->hint = $hint;
-
-        return $this;
+        return $this->findAndModify(array('remove' => true));
     }
 
     /**
-     * Insert a document into the collection.
+     * Replace one document matching the current scope and return its original
+     * value.
      *
-     * @param array|object $document
-     * @param array $options
-     * @return array|boolean
+     * @param array|object $newObj
+     * @return array|null
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     * @throws InvalidArgumentException if $newObj contains update operators
+     * @throws ResultException if the findAndModify command fails
      */
-    public function insert($document, array $options = array())
+    public function getOneAndReplace($newObj)
     {
-        if (isset($this->writeConcern)) {
-            $options = array_merge(array('w' => $this->writeConcern), $options);
+        if ($this->hasUpdateOperator($newObj)) {
+            throw new InvalidArgumentException('getOneAndReplace() does not support update operators in $newObj');
         }
 
-        return $this->collection->insert($document, $options);
+        return $this->findAndModify(array('update' => $newObj, 'new' => false));
+    }
+
+    /**
+     * Update one document matching the current scope and return its original
+     * value.
+     *
+     * @param array|object $newObj
+     * @return array|null
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     * @throws InvalidArgumentException if $newObj does not contain update operators
+     * @throws ResultException if the findAndModify command fails
+     */
+    public function getOneAndUpdate($newObj)
+    {
+        if ( ! $this->hasUpdateOperator($newObj)) {
+            throw new InvalidArgumentException('update() requires update operators in $newObj');
+        }
+
+        return $this->findAndModify(array('update' => $newObj, 'new' => false));
     }
 
     /**
@@ -271,160 +233,119 @@ class Scope
     }
 
     /**
-     * Set the $max cursor option for a read operation.
+     * Remove all documents matching the current scope.
      *
-     * @see http://docs.mongodb.org/manual/reference/operator/max/
-     * @param array $max
-     * @return self
-     */
-    public function max(array $max)
-    {
-        $this->max = $max;
-
-        return $this;
-    }
-
-    /**
-     * Set the $maxScan cursor option for a read operation.
-     *
-     * @see http://docs.mongodb.org/manual/reference/operator/maxScan/
-     * @param integer $maxScan
-     * @return self
-     */
-    public function maxScan($maxScan)
-    {
-        $this->maxScan = (integer) $maxScan;
-
-        return $this;
-    }
-
-    /**
-     * Set the $maxTime cursor option for a read operation.
-     *
-     * @param integer $maxTime
-     * @return self
-     */
-    public function maxTime($maxTime)
-    {
-        $this->maxTime = (integer) $maxTime;
-
-        return $this;
-    }
-
-    /**
-     * Set the $min cursor option for a read operation.
-     *
-     * @see http://docs.mongodb.org/manual/reference/operator/min/
-     * @param array $min
-     * @return self
-     */
-    public function min(array $min)
-    {
-        $this->min = $min;
-
-        return $this;
-    }
-
-    /**
-     * Remove one or more documents from the collection.
-     *
-     * @param array $options
      * @return array|boolean
      * @throws BadMethodCallException if the limit is set and greater than one
+     *                                or the skip offset is greater than zero
      */
-    public function remove(array $options = array())
+    public function remove()
     {
-        $defaultOptions = array();
-
         if ($this->limit > 1) {
             throw new BadMethodCallException('remove() does not support a limit greater than one');
         }
 
-        if ($this->limit === 1) {
-            $defaultOptions['justOne'] = true;
+        if ($this->skip > 0) {
+            throw new BadMethodCallException('remove() does not support a skip offset');
         }
 
-        if (isset($this->writeConcern)) {
-            $defaultOptions['w'] = $this->writeConcern;
-        }
+        $options = empty($this->writeOptions) ? array() : $this->writeOptions;
+        $options['justOne'] = ($this->limit === 1);
 
-        return $this->collection->remove($this->query, array_merge($defaultOptions, $options));
+        return $this->collection->remove($this->query, $options);
     }
 
     /**
-     * Replace one or more documents in the collection.
+     * Remove one document matching the current scope.
      *
-     * @param array|object $newObj
      * @param array $options
      * @return array|boolean
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     */
+    public function removeOne()
+    {
+        if ($this->skip > 0) {
+            throw new BadMethodCallException('removeOne() does not support a skip offset');
+        }
+
+        $options = empty($this->writeOptions) ? array() : $this->writeOptions;
+        $options['justOne'] = true;
+
+        return $this->collection->remove($this->query, $options);
+    }
+
+    /**
+     * Replace all documents matching the current scope.
+     *
+     * @param array|object $newObj
+     * @return array|boolean
      * @throws BadMethodCallException if the limit is set and greater than one
+     *                                or the skip offset is greater than zero
      * @throws InvalidArgumentException if $newObj contains update operators
      */
-    public function replace($newObj, array $options = array())
+    public function replace($newObj)
     {
         if ($this->hasUpdateOperator($newObj)) {
             throw new InvalidArgumentException('replace() does not support update operators in $newObj');
         }
 
-        $defaultOptions = array();
-
         if ($this->limit > 1) {
             throw new BadMethodCallException('replace() does not support a limit greater than one');
         }
 
-        $defaultOptions['multiple'] = ($this->limit !== 1);
-
-        if (isset($this->upsert)) {
-            $defaultOptions['upsert'] = $this->upsert;
+        if ($this->skip > 0) {
+            throw new BadMethodCallException('replace() does not support a skip offset');
         }
 
-        if (isset($this->writeConcern)) {
-            $defaultOptions['w'] = $this->writeConcern;
-        }
+        $options = empty($this->writeOptions) ? array() : $this->writeOptions;
+        $options['multiple'] = ($this->limit !== 1);
+        $options['upsert'] = ($this->upsert === true);
 
-        return $this->collection->update($this->query, $newObj, array_merge($defaultOptions, $options));
+        return $this->collection->update($this->query, $newObj, $options);
     }
 
     /**
-     * Set the $returnKey cursor option for a read operation.
+     * Replace one document matching the current scope.
      *
-     * @see http://docs.mongodb.org/manual/reference/operator/returnKey/
-     * @return self
-     */
-    public function returnKey()
-    {
-        $this->returnKey = true;
-
-        return $this;
-    }
-
-    /**
-     * Save a document to the collection.
-     *
-     * @param array|object $document
-     * @param array $options
+     * @param array|object $newObj
      * @return array|boolean
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     * @throws InvalidArgumentException if $newObj contains update operators
      */
-    public function save($document, array $options = array())
+    public function replaceOne($newObj)
     {
-        if (isset($this->writeConcern)) {
-            $options = array_merge(array('w' => $this->writeConcern), $options);
+        if ($this->hasUpdateOperator($newObj)) {
+            throw new InvalidArgumentException('replaceOne() does not support update operators in $newObj');
         }
 
-        return $this->collection->save($document, $options);
+        if ($this->skip > 0) {
+            throw new BadMethodCallException('replaceOne() does not support a skip offset');
+        }
+
+        $options = empty($this->writeOptions) ? array() : $this->writeOptions;
+        $options['multiple'] = false;
+        $options['upsert'] = ($this->upsert === true);
+
+        return $this->collection->update($this->query, $newObj, $options);
     }
 
     /**
-     * Set the $showDiskLoc cursor option for a read operation.
+     * Replace one document matching the current scope and return its modified
+     * value.
      *
-     * @see http://docs.mongodb.org/manual/reference/operator/showDiskLoc/
-     * @return self
+     * @param array|object $newObj
+     * @return array|boolean
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     * @throws InvalidArgumentException if $newObj contains update operators
+     * @throws ResultException if the findAndModify command fails
      */
-    public function showDiskLoc()
+    public function replaceOneAndGet($newObj)
     {
-        $this->showDiskLoc = true;
+        if ($this->hasUpdateOperator($newObj)) {
+            throw new InvalidArgumentException('replaceOneAndGet() does not support update operators in $newObj');
+        }
 
-        return $this;
+        return $this->findAndModify(array('update' => $newObj, 'new' => true));
     }
 
     /**
@@ -436,19 +357,6 @@ class Scope
     public function skip($skip)
     {
         $this->skip = (integer) $skip;
-
-        return $this;
-    }
-
-    /**
-     * Set the $snapshot cursor option for a read operation.
-     *
-     * @see http://docs.mongodb.org/manual/reference/operator/snapshot/
-     * @return self
-     */
-    public function snapshot()
-    {
-        $this->snapshot = true;
 
         return $this;
     }
@@ -467,37 +375,90 @@ class Scope
     }
 
     /**
-     * Update one or more documents in the collection.
+     * Update all documents matching the current scope.
      *
      * @param array|object $newObj
-     * @param array $options
      * @return array|boolean
      * @throws BadMethodCallException if the limit is set and greater than one
+     *                                or the skip offset is greater than zero
      * @throws InvalidArgumentException if $newObj does not contain update operators
      */
-    public function update($newObj, array $options = array())
+    public function update($newObj)
     {
         if ( ! $this->hasUpdateOperator($newObj)) {
             throw new InvalidArgumentException('update() requires update operators in $newObj');
         }
 
-        $defaultOptions = array();
-
         if ($this->limit > 1) {
-            throw new BadMethodCallException('replace() does not support a limit greater than one');
+            throw new BadMethodCallException('update() does not support a limit greater than one');
         }
 
-        $defaultOptions['multiple'] = ($this->limit !== 1);
-
-        if (isset($this->upsert)) {
-            $defaultOptions['upsert'] = $this->upsert;
+        if ($this->skip > 0) {
+            throw new BadMethodCallException('update() does not support a skip offset');
         }
 
-        if (isset($this->writeConcern)) {
-            $defaultOptions['w'] = $this->writeConcern;
+        $options = empty($this->writeOptions) ? array() : $this->writeOptions;
+        $options['multiple'] = ($this->limit !== 1);
+        $options['upsert'] = ($this->upsert === true);
+
+        return $this->collection->update($this->query, $newObj, $options);
+    }
+
+    /**
+     * Update one document matching the current scope.
+     *
+     * @param array|object $newObj
+     * @return array|boolean
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     * @throws InvalidArgumentException if $newObj contains update operators
+     */
+    public function updateOne($newObj)
+    {
+        if ( ! $this->hasUpdateOperator($newObj)) {
+            throw new InvalidArgumentException('updateOne() does not support update operators in $newObj');
         }
 
-        return $this->collection->update($this->query, $newObj, array_merge($defaultOptions, $options));
+        if ($this->skip > 0) {
+            throw new BadMethodCallException('updateOne() does not support a skip offset');
+        }
+
+        $options = empty($this->writeOptions) ? array() : $this->writeOptions;
+        $options['multiple'] = false;
+        $options['upsert'] = ($this->upsert === true);
+
+        return $this->collection->update($this->query, $newObj, $options);
+    }
+
+    /**
+     * Update one document matching the current scope and return its modified
+     * value.
+     *
+     * @param array|object $newObj
+     * @return array|boolean
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     * @throws InvalidArgumentException if $newObj does not contain update operators
+     * @throws ResultException if the findAndModify command fails
+     */
+    public function updateOneAndGet($newObj)
+    {
+        if ( ! $this->hasUpdateOperator($newObj)) {
+            throw new InvalidArgumentException('updateOneAndGet() does not support update operators in $newObj');
+        }
+
+        return $this->findAndModify(array('update' => $newObj, 'new' => true));
+    }
+
+    /**
+     * Set the upsert option for a write operation.
+     *
+     * @param boolean $upsert
+     * @return self
+     */
+    public function upsert($upsert = true)
+    {
+        $this->upsert = (boolean) $upsert;
+
+        return $this;
     }
 
     /**
@@ -508,7 +469,55 @@ class Scope
      */
     public function withBatchSize($batchSize)
     {
-        $this->batchSize = $batchSize;
+        $this->batchSize = (integer) $batchSize;
+
+        return $this;
+    }
+
+    /**
+     * Set the cursor options.
+     *
+     * @see http://php.net/manual/en/mongocursor.setflag.php
+     * @param array|CursorOptions $cursorOptions
+     * @return self
+     * @throws InvalidArgumentException if $cursorOptions is neither an array
+     *                                  nor a CursorOptions instance
+     */
+    public function withCursorOptions($cursorOptions)
+    {
+        if ($cursorOptions instanceof CursorOptions) {
+            $cursorOptions = $cursorOptions->toArray();
+        }
+
+        if ( ! is_array($cursorOptions)) {
+            throw new InvalidArgumentException('$cursorOptions must be an array or CursorOptions instance');
+        }
+
+        $this->cursorOptions = $cursorOptions;
+
+        return $this;
+    }
+
+    /**
+     * Set the query options.
+     *
+     * @see http://php.net/manual/en/mongocursor.addoption.php
+     * @param array|QueryOptions $queryOptions
+     * @return self
+     * @throws InvalidArgumentException if $queryOptions is neither an array nor
+     *                                  a QueryOptions instance
+     */
+    public function withQueryOptions($queryOptions)
+    {
+        if ($queryOptions instanceof QueryOptions) {
+            $queryOptions = $queryOptions->toArray();
+        }
+
+        if ( ! is_array($queryOptions)) {
+            throw new InvalidArgumentException('$queryOptions must be an array or QueryOptions instance');
+        }
+
+        $this->queryOptions = $queryOptions;
 
         return $this;
     }
@@ -516,6 +525,7 @@ class Scope
     /**
      * Set the read preference.
      *
+     * @see http://docs.mongodb.org/manual/core/read-preference/
      * @param string $readPreference
      * @param array $tags
      * @return self
@@ -529,42 +539,66 @@ class Scope
     }
 
     /**
-     * Set the write concern.
+     * Set the write options.
      *
-     * @param integer|string $writeConcern
+     * @see http://docs.mongodb.org/manual/core/write-concern/
+     * @param array|WriteOptions $writeOptions
      * @return self
+     * @throws InvalidArgumentException if $writeOptions is neither an array nor
+     *                                  a WriteOptions instance
      */
-    public function withWriteConcern($writeConcern)
+    public function withWriteOptions($writeOptions)
     {
-        $this->writeConcern = $writeConcern;
+        if ($writeOptions instanceof WriteOptions) {
+            $writeOptions = $writeOptions->toArray();
+        }
+
+        if ( ! is_array($writeOptions)) {
+            throw new InvalidArgumentException('$writeOptions must be an array or WriteOptions instance');
+        }
+
+        $this->writeOptions = $writeOptions;
 
         return $this;
     }
 
     /**
+     * Execute a database command.
+     *
+     * @param array $command
+     * @return array
+     * @throws MongoResultException if the command fails
+     */
+    private function command(array $command)
+    {
+        $result = $this->collection->db->command($command);
+
+        if ( ! isset($result['ok'])) {
+            throw new UnexpectedValueException('Command response missing "ok" field');
+        }
+
+        if ($result['ok'] < 1) {
+            throw new ResultException($result);
+        }
+
+        return $result;
+    }
+
+    /**
      * Create a MongoCursor based on the Scope's current state.
      *
-     * @return MongoCursor
+     * @return \MongoCursor
      */
     private function createCursor()
     {
         $cursor = $this->collection->find($this->query, $this->fields);
 
-        $options = array(
-            'comment',
-            'max',
-            'maxScan',
-            'maxTime',
-            'min',
-            'returnKey',
-            'showDiskLoc',
-            'snapshot',
-        );
+        foreach ($this->cursorOptions as $flag => $bit) {
+            $cursor->setFlag((integer) $flag, (boolean) $bit);
+        }
 
-        foreach ($options as $option) {
-            if (isset($this->{$option})) {
-                $cursor->addOption('$' . $option, $this->{$option});
-            }
+        foreach ($this->queryOptions as $option => $value) {
+            $cursor->addOption($option, $value);
         }
 
         if (isset($this->batchSize)) {
@@ -588,6 +622,42 @@ class Scope
         }
 
         return $cursor;
+    }
+
+    /**
+     * Execute a findAndModify command.
+     *
+     * @param array $options
+     * @return array|null
+     * @throws MongoResultException if the command fails
+     * @throws BadMethodCallException if the skip offset is greater than zero
+     */
+    private function findAndModify(array $options)
+    {
+        if ($this->skip > 0) {
+            throw new BadMethodCallException('findAndModify command does not support a skip offset');
+        }
+
+        $command = array_merge(
+            array('findAndModify' => $this->collection->getName()),
+            $options
+        );
+
+        if ( ! empty($this->query)) {
+            $command['query'] = $this->query;
+        }
+
+        if ( ! empty($this->fields)) {
+            $command['fields'] = $this->fields;
+        }
+
+        if ( ! empty($this->sort)) {
+            $command['sort'] = $this->sort;
+        }
+
+        $result = $this->command($command);
+
+        return $result['value'];
     }
 
     /**
