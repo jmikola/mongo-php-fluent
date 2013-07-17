@@ -1,6 +1,6 @@
 <?php
 
-namespace MongoDB\Tests;
+namespace MongoDB\Tests\Functional;
 
 use MongoClient;
 use MongoDB\Scope;
