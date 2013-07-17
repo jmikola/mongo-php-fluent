@@ -477,7 +477,6 @@ class Scope
      */
     public function update($newObj, array $options = array())
     {
-        // @todo Empty $newObj should be allowed
         if ( ! $this->hasUpdateOperator($newObj)) {
             throw new InvalidArgumentException('update() requires update operators in $newObj');
         }
