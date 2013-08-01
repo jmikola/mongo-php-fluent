@@ -540,7 +540,8 @@ class Scope
      *
      * @param array $command
      * @return array
-     * @throws MongoResultException if the command fails
+     * @throws ResultException if the command fails
+     * @throws UnexpectedValueException if the command response is invalid
      */
     private function command(array $command)
     {
@@ -611,9 +612,10 @@ class Scope
     /**
      * Execute a findAndModify command.
      *
+     * @see http://docs.mongodb.org/manual/reference/command/findAndModify/
      * @param array $options
      * @return array|null
-     * @throws MongoResultException if the command fails
+     * @throws ResultException if the command fails
      * @throws BadMethodCallException if the skip offset is greater than zero
      */
     private function findAndModify(array $options)
