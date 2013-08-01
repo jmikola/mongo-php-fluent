@@ -167,7 +167,6 @@ class Scope
      */
     public function getOne()
     {
-        // @todo Should this respect a skip option?
         return $this->createCursor()->limit(-1)->getNext();
     }
 
