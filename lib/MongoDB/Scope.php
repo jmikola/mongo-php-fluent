@@ -117,12 +117,14 @@ class Scope
     /**
      * Return the result count for a read operation.
      *
-     * @todo Should this use a MongoCursor and respect limit/skip ($foundOnly)?
+     * If limit or skip were specified, they will be considered by the count.
+     * This differs from MongoCursor::count()'s default behavior.
+     *
      * @return integer
      */
     public function count()
     {
-        return $this->createCursor()->count();
+        return $this->createCursor()->count(true);
     }
 
     /**
