@@ -28,13 +28,6 @@ class Scope
     private $collection;
 
     /**
-     * The cursor options.
-     *
-     * @var array
-     */
-    private $cursorOptions = array();
-
-    /**
      * The query projection.
      *
      * @var array
@@ -153,11 +146,14 @@ class Scope
     /**
      * Return the result cursor for a read operation.
      *
+     * @param array|CursorOptions $cursorOptions
      * @return \MongoCursor
+     * @throws InvalidArgumentException if $cursorOptions is neither an array
+     *                                  nor a CursorOptions instance
      */
-    public function get()
+    public function get($cursorOptions = array())
     {
-        return $this->createCursor();
+        return $this->createCursor($cursorOptions);
     }
 
     /**
@@ -476,30 +472,6 @@ class Scope
     }
 
     /**
-     * Set the cursor options.
-     *
-     * @see http://php.net/manual/en/mongocursor.setflag.php
-     * @param array|CursorOptions $cursorOptions
-     * @return self
-     * @throws InvalidArgumentException if $cursorOptions is neither an array
-     *                                  nor a CursorOptions instance
-     */
-    public function withCursorOptions($cursorOptions)
-    {
-        if ($cursorOptions instanceof CursorOptions) {
-            $cursorOptions = $cursorOptions->toArray();
-        }
-
-        if ( ! is_array($cursorOptions)) {
-            throw new InvalidArgumentException('$cursorOptions must be an array or CursorOptions instance');
-        }
-
-        $this->cursorOptions = $cursorOptions;
-
-        return $this;
-    }
-
-    /**
      * Set the query options.
      *
      * @see http://php.net/manual/en/mongocursor.addoption.php
@@ -588,13 +560,24 @@ class Scope
     /**
      * Create a MongoCursor based on the Scope's current state.
      *
+     * @param array|CursorOptions $cursorOptions
      * @return \MongoCursor
+     * @throws InvalidArgumentException if $cursorOptions is given and neither
+     *                                  an array nor a CursorOptions instance
      */
-    private function createCursor()
+    private function createCursor($cursorOptions = array())
     {
+        if ($cursorOptions instanceof CursorOptions) {
+            $cursorOptions = $cursorOptions->toArray();
+        }
+
+        if ( ! is_array($cursorOptions)) {
+            throw new InvalidArgumentException('$cursorOptions must be an array or CursorOptions instance');
+        }
+
         $cursor = $this->collection->find($this->query, $this->fields);
 
-        foreach ($this->cursorOptions as $flag => $bit) {
+        foreach ($cursorOptions as $flag => $bit) {
             $cursor->setFlag((integer) $flag, (boolean) $bit);
         }
 
