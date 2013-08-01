@@ -8,10 +8,11 @@ use MongoDB\Options\QueryOptions;
 use MongoDB\Options\WriteOptions;
 use BadMethodCallException;
 use InvalidArgumentException;
+use IteratorAggregate;
 use MongoCollection;
 use UnexpectedValueException;
 
-class Scope
+class Scope implements IteratorAggregate
 {
     /**
      * The batch size for a read operation.
@@ -154,6 +155,18 @@ class Scope
     public function get($cursorOptions = array())
     {
         return $this->createCursor($cursorOptions);
+    }
+
+    /**
+     * Return the result cursor for a read operation.
+     *
+     * @see http://php.net/manual/en/iteratoraggregate.getiterator.php
+     * @see Scope::get()
+     * @return \MongoCursor
+     */
+    public function getIterator()
+    {
+        return $this->createCursor();
     }
 
     /**
