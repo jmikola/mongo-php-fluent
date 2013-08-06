@@ -28,8 +28,8 @@ class ResultException extends RuntimeException
      */
     public function __construct(array $document)
     {
-        $message = isset($result['errmsg']) ? $result['errmsg'] : 'Unknown error executing command';
-        $code = isset($result['code']) ? $result['code'] : 0;
+        $message = isset($document['errmsg']) ? $document['errmsg'] : 'Unknown error executing command';
+        $code = isset($document['code']) ? $document['code'] : 0;
 
         parent::__construct($message, $code);
     }
