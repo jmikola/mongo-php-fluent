@@ -3,6 +3,7 @@
 namespace MongoDB;
 
 use MongoDB\Exception\ResultException;
+use MongoDB\Exception\UnexpectedTypeException;
 use MongoDB\Options\CursorOptions;
 use MongoDB\Options\QueryOptions;
 use MongoDB\Options\WriteOptions;
@@ -490,8 +491,8 @@ class Scope implements IteratorAggregate
      * @see http://php.net/manual/en/mongocursor.addoption.php
      * @param array|QueryOptions $queryOptions
      * @return self
-     * @throws InvalidArgumentException if $queryOptions is neither an array nor
-     *                                  a QueryOptions instance
+     * @throws UnexpectedTypeException if $queryOptions is neither an array nor
+     *                                 a QueryOptions instance
      */
     public function withQueryOptions($queryOptions)
     {
@@ -500,7 +501,7 @@ class Scope implements IteratorAggregate
         }
 
         if ( ! is_array($queryOptions)) {
-            throw new InvalidArgumentException('$queryOptions must be an array or QueryOptions instance');
+            throw new UnexpectedTypeException($queryOptions, 'array or MongoDB\Options\QueryOptions');
         }
 
         $this->queryOptions = $queryOptions;
@@ -530,8 +531,8 @@ class Scope implements IteratorAggregate
      * @see http://docs.mongodb.org/manual/core/write-concern/
      * @param array|WriteOptions $writeOptions
      * @return self
-     * @throws InvalidArgumentException if $writeOptions is neither an array nor
-     *                                  a WriteOptions instance
+     * @throws UnexpectedTypeException if $writeOptions is neither an array nor
+     *                                 a WriteOptions instance
      */
     public function withWriteOptions($writeOptions)
     {
@@ -540,7 +541,7 @@ class Scope implements IteratorAggregate
         }
 
         if ( ! is_array($writeOptions)) {
-            throw new InvalidArgumentException('$writeOptions must be an array or WriteOptions instance');
+            throw new UnexpectedTypeException($writeOptions, 'array or MongoDB\Options\WriteOptions');
         }
 
         $this->writeOptions = $writeOptions;
@@ -576,8 +577,8 @@ class Scope implements IteratorAggregate
      *
      * @param array|CursorOptions $cursorOptions
      * @return \MongoCursor
-     * @throws InvalidArgumentException if $cursorOptions is given and neither
-     *                                  an array nor a CursorOptions instance
+     * @throws UnexpectedTypeException if $cursorOptions is given and neither
+     *                                 an array nor a CursorOptions instance
      */
     private function createCursor($cursorOptions = array())
     {
@@ -586,7 +587,7 @@ class Scope implements IteratorAggregate
         }
 
         if ( ! is_array($cursorOptions)) {
-            throw new InvalidArgumentException('$cursorOptions must be an array or CursorOptions instance');
+            throw new UnexpectedTypeException($cursorOptions, 'array or MongoDB\Options\CursorOptions');
         }
 
         $cursor = $this->collection->find($this->query, $this->fields);
@@ -666,7 +667,7 @@ class Scope implements IteratorAggregate
      *
      * @param array|object $newObj
      * @return boolean
-     * @throws InvalidArgumentException if $newObj is neither an array nor an object
+     * @throws UnexpectedTypeException if $newObj is neither an array nor an object
      */
     private function hasUpdateOperator($newObj)
     {
@@ -675,7 +676,7 @@ class Scope implements IteratorAggregate
         }
 
         if ( ! is_array($newObj)) {
-            throw new InvalidArgumentException('$newObj must be an array or object');
+            throw new UnexpectedTypeException($newObj, 'array or object');
         }
 
         if (empty($newObj)) {
