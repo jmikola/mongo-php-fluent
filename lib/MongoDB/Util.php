@@ -6,10 +6,10 @@ use UnexpectedValueException;
 
 class Util
 {
-    const UNKNOWN_ERROR = 8;
-    const WRITE_CONCERN_FAILED = 64;
-    const UNKNOWN_REPL_WRITE_CONCERN = 79;
-    const NOT_MASTER = 10107;
+    const ERR_UNKNOWN_ERROR = 8;
+    const ERR_WRITE_CONCERN_FAILED = 64;
+    const ERR_UNKNOWN_REPL_WRITE_CONCERN = 79;
+    const ERR_NOT_MASTER = 10107;
 
     /**
      * Parses a getLastError response and properly sets the write errors and
@@ -31,12 +31,15 @@ class Util
         $wNote   = ! empty($gle['wnote']) ? (string) $gle['wnote'] : '';
         $timeout = ! empty($gle['wtimeout']);
 
-        $extractedError = array('writeError' => null, 'wcError' => null);
+        $extractedError = array(
+            'writeError' => null,
+            'wcError' => null
+        );
 
         if ($err === 'norepl' || $err === 'noreplset') {
             // Know this is legacy gle and the repl not enforced - write concern error in 2.4
             $extractedError['wcError'] = array(
-                'code' => self::WRITE_CONCERN_FAILED,
+                'code' => self::ERR_WRITE_CONCERN_FAILED,
                 'errmsg' => $errMsg ?: $wNote ?: $err,
             );
 
@@ -46,7 +49,7 @@ class Util
         if ($timeout) {
             // Know there was not write error
             $extractedError['wcError'] = array(
-                'code' => self::WRITE_CONCERN_FAILED,
+                'code' => self::ERR_WRITE_CONCERN_FAILED,
                 'errmsg' => $errMsg ?: $err,
                 'errInfo' => array('wtimeout' => true),
             );
@@ -57,9 +60,9 @@ class Util
         if ($code === 19900 || // No longer primary
             $code === 16805 || // replicatedToNum no longer primary
             $code === 14330 || // gle wmode changed; invalid
-            $code === self::NOT_MASTER ||
-            $code === self::UNKNOWN_REPL_WRITE_CONCERN ||
-            $code === self::WRITE_CONCERN_FAILED) {
+            $code === self::ERR_NOT_MASTER ||
+            $code === self::ERR_UNKNOWN_REPL_WRITE_CONCERN ||
+            $code === self::ERR_WRITE_CONCERN_FAILED) {
 
             $extractedError['wcError'] = array(
                 'code' => $code,
@@ -75,7 +78,7 @@ class Util
 
         if ($err !== '') {
             $extractedError['writeError'] = array(
-                'code' => ($code === 0) ? self::UNKNOWN_ERROR : $code,
+                'code' => ($code === 0) ? self::ERR_UNKNOWN_ERROR : $code,
                 'errmsg' => $err,
             );
 
@@ -84,7 +87,7 @@ class Util
 
         if ($jNote !== '') {
             $extractedError['writeError'] = array(
-                'code' => self::WRITE_CONCERN_FAILED,
+                'code' => self::ERR_WRITE_CONCERN_FAILED,
                 'errmsg' => $jNote,
             );
 

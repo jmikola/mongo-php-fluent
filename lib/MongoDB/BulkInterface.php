@@ -3,7 +3,7 @@
 namespace MongoDB;
 
 use MongoDB\Exception\UnexpectedTypeException;
-use InvalidArgumentException;
+use BadMethodCallException;
 
 interface BulkInterface
 {
@@ -13,6 +13,15 @@ interface BulkInterface
 
     const MAX_BATCH_SIZE_DOCS = 1000;
     const MAX_BATCH_SIZE_BYTES = 16777216;
+
+    /**
+     * Executes all scheduled write operations.
+     *
+     * @param array $writeConcern
+     * @return array
+     * @throws BadMethodCallException if the bulk operations have already been executed
+     */
+    public function execute(array $writeConcern = null);
 
     /**
      * Sets the query selector for the next update or remove operation.
