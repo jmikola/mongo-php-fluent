@@ -234,7 +234,7 @@ abstract class Bulk implements BulkInterface
      *
      * @param integer $type
      * @param object  $document
-     * @throws InvalidArgumentException if the document BSON size exceeds
+     * @throws InvalidArgumentException if the document's BSON size exceeds
      *                                  BulkInterface::MAX_BATCH_SIZE_BYTES
      */
     abstract protected function addOperation($type, $document);

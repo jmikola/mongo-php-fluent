@@ -16,17 +16,17 @@ class UnorderedBulk extends Bulk
      * @see Bulk::addOperation()
      * @param integer $type
      * @param object  $document
-     * @throws InvalidArgumentException if the document BSON size exceeds
+     * @throws InvalidArgumentException if the document's BSON size exceeds
      *                                  BulkInterface::MAX_BATCH_SIZE_BYTES
      */
     protected function addOperation($type, $document)
     {
-        $docSize = strlen(bson_encode($document));
+        $bsonSize = strlen(bson_encode($document));
 
-        if ($docSize >= BulkInterface::MAX_BATCH_SIZE_BYTES) {
+        if ($bsonSize >= BulkInterface::MAX_BATCH_SIZE_BYTES) {
             throw new InvalidArgumentException(sprintf(
                 'Document BSON size (%d) exceeds maximum (%d)',
-                $docSize, BulkInterface::MAX_BATCH_SIZE_BYTES
+                $bsonSize, BulkInterface::MAX_BATCH_SIZE_BYTES
             ));
         }
 
@@ -37,13 +37,13 @@ class UnorderedBulk extends Bulk
         if ($this->currentBatch === null ||
             $this->currentBatch->getType() !== $type ||
             $this->currentBatch->getSize() + 1 >= BulkInterface::MAX_BATCH_SIZE_DOCS ||
-            $this->currentBatch->getBsonSize() + $docSize >= BulkInterface::MAX_BATCH_SIZE_BYTES) {
+            $this->currentBatch->getBsonSize() + $bsonSize >= BulkInterface::MAX_BATCH_SIZE_BYTES) {
 
             $this->currentBatch = new Batch($type);
             $this->batches[] = $this->currentBatch;
         }
 
-        $this->currentBatch->add($this->currentIndex, $document, $docSize);
+        $this->currentBatch->add($this->currentIndex, $document, $bsonSize);
         $this->currentIndex += 1;
     }
 
