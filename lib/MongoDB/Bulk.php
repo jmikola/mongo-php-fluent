@@ -128,7 +128,7 @@ abstract class Bulk implements BulkInterface
      */
     public function remove()
     {
-        $document = array(
+        $document = (object) array(
             'q' => empty($this->currentOp['q']) ? new stdClass : $this->currentOp['q'],
             'limit' => 0,
         );
@@ -145,7 +145,7 @@ abstract class Bulk implements BulkInterface
      */
     public function removeOne()
     {
-        $document = array(
+        $document = (object) array(
             'q' => empty($this->currentOp['q']) ? new stdClass : $this->currentOp['q'],
             'limit' => 1,
         );
@@ -174,7 +174,7 @@ abstract class Bulk implements BulkInterface
             throw new UnexpectedTypeException($newObj, 'array or object');
         }
 
-        $document = array(
+        $document = (object) array(
             'q' => empty($this->currentOp['q']) ? new stdClass : $this->currentOp['q'],
             'u' => $newObj,
             'multi' => empty($this->currentOp['upsert']),
@@ -203,7 +203,7 @@ abstract class Bulk implements BulkInterface
             throw new UnexpectedTypeException($newObj, 'array or object');
         }
 
-        $document = array(
+        $document = (object) array(
             'q' => empty($this->currentOp['q']) ? new stdClass : $this->currentOp['q'],
             'u' => $newObj,
             'multi' => false,
@@ -232,8 +232,8 @@ abstract class Bulk implements BulkInterface
     /**
      * Adds a write operation.
      *
-     * @param integer      $type
-     * @param array|object $document
+     * @param integer $type
+     * @param object  $document
      * @throws InvalidArgumentException if the document BSON size exceeds
      *                                  BulkInterface::MAX_BATCH_SIZE_BYTES
      */

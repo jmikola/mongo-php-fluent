@@ -14,8 +14,8 @@ class OrderedBulk extends Bulk
      * Adds a write operation.
      *
      * @see Bulk::addOperation()
-     * @param integer      $type
-     * @param array|object $document
+     * @param integer $type
+     * @param object  $document
      * @throws InvalidArgumentException if the document BSON size exceeds
      *                                  BulkInterface::MAX_BATCH_SIZE_BYTES
      */
