@@ -39,11 +39,11 @@ class UnorderedBulk extends Bulk
             $this->currentBatch->getSize() + 1 >= BulkInterface::MAX_BATCH_SIZE_DOCS ||
             $this->currentBatch->getBsonSize() + $docSize >= BulkInterface::MAX_BATCH_SIZE_BYTES) {
 
-            $this->currentBatch = new Batch($type, $this->currentIndex);
+            $this->currentBatch = new Batch($type);
             $this->batches[] = $this->currentBatch;
         }
 
-        $this->currentBatch->push($document, $docSize);
+        $this->currentBatch->add($this->currentIndex, $document, $docSize);
         $this->currentIndex += 1;
     }
 

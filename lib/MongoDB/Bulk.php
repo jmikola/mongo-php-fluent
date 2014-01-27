@@ -269,7 +269,7 @@ abstract class Bulk implements BulkInterface
 
         $ordered = $this->isOrdered();
 
-        foreach ($batch->getDocuments() as $i => $document) {
+        foreach ($batch->getDocuments() as $batchIndex => $document) {
             if ($ordered && ! empty($result['writeErrors'])) {
                 break;
             }
@@ -295,7 +295,7 @@ abstract class Bulk implements BulkInterface
 
             if ($err['writeError'] !== null) {
                 $result['writeErrors'][] = array(
-                    'index' => $i,
+                    'index' => $batchIndex,
                     'code' => $err['writeError']['code'],
                     'errmsg' => $err['writeError']['errmsg'],
                     'op' => $document,
@@ -310,12 +310,10 @@ abstract class Bulk implements BulkInterface
             }
 
             if ($this->type === BulkInterface::OP_UPDATE) {
-                /* 
-                 */
                 if ($document['upsert'] && empty($gle['updatedExisting'])) {
                     $result['n'] += 1;
                     $result['upserted'][] = array(
-                        'index' => $i,
+                        'index' => $batchIndex,
                         '_id' => $this->getUpsertedId($document, $gle),
                     );
                 }
@@ -476,7 +474,7 @@ abstract class Bulk implements BulkInterface
 
             if ( ! empty($batchResult['upserted']) && is_array($batchResult['upserted'])) {
                 foreach ($batchResult['upserted'] as $upsert) {
-                    $upsert['index'] += $batch->getBaseIndex();
+                    $upsert['index'] = $batch->getBulkIndex($upsert['index']);
                     $bulkResult['upserted'][] = $upsert;
                 }
 
@@ -490,9 +488,8 @@ abstract class Bulk implements BulkInterface
 
         if ( ! empty($batchResult['writeErrors']) && is_array($batchResult['writeErrors'])) {
             foreach ($batchResult['writeErrors'] as $writeError) {
-                $documents = $batch->getDocuments();
-                $writeError['op'] = $documents[$writeError['index']];
-                $writeError['index'] += $batch->getBaseIndex();
+                $writeError['op'] = $batch->getDocument($writeError['index']);
+                $writeError['index'] = $batch->getBulkIndex($writeError['index']);
                 $bulkResult['writeErrors'][] = $writeError;
             }
         }

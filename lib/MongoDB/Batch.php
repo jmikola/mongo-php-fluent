@@ -2,35 +2,54 @@
 
 namespace MongoDB;
 
+use MongoDB\Exception\UnexpectedTypeException;
 use InvalidArgumentException;
+use OutOfBoundsException;
 use OverflowException;
 
 class Batch
 {
-    private $baseIndex;
+    /**
+     * Combined BSON size of all documents in the batch.
+     *
+     * @var integer
+     */
     private $bsonSize = 0;
+
+    /**
+     * Batch documents (e.g. operations).
+     *
+     * @var array
+     */
     private $documents = array();
+
+    /**
+     * Map of document bulk indexes to their batch index.
+     *
+     * @var array
+     */
+    private $indexMap = array();
+
+    /**
+     * Operation type for batch documents.
+     *
+     * @var integer
+     */
     private $type;
 
     /**
      * Constructor.
      *
      * @param integer $type
-     * @param integer $baseIndex
-     * @throws InvalidArgumentException if $type is invalid or $baseIndex is negative
+     * @throws InvalidArgumentException if $type is invalid
      */
-    public function __construct($type, $baseIndex)
+    public function __construct($type)
     {
         if ( ! in_array($type, array(BulkInterface::OP_INSERT, BulkInterface::OP_UPDATE, BulkInterface::OP_REMOVE))) {
             throw new InvalidArgumentException(sprintf('Invalid type: %d', $type));
         }
 
-        if ($baseIndex < 0) {
-            throw new InvalidArgumentException(sprintf('Base index cannot be negative: %d', $baseIndex));
-        }
-
         $this->type = (integer) $type;
-        $this->baseIndex = (integer) $baseIndex;
     }
 
     /**
@@ -38,13 +57,31 @@ class Batch
      *
      * The BSON size is taken as an argument to avoid recalculation.
      *
-     * @param array|object $document
-     * @param integer      $bsonSize
+     * @param integer $bulkIndex
+     * @param object  $document
+     * @param integer $bsonSize
+     * @throws OutOfBoundsException if $bulkIndex is negative or the batch
+     *                              already contains a document for $bulkIndex
      * @throws OverflowException if the batch cannot accomodate the document due
-     *                           to either the document or BSON limit
+     *                           to either the batch size or BSON size limit
+     * @throws UnexpectedTypeException if $document is not an object
      */
-    public function push($document, $bsonSize)
+    public function add($bulkIndex, $document, $bsonSize)
     {
+        $bulkIndex = (integer) $bulkIndex;
+
+        if ($bulkIndex < 0) {
+            throw new OutOfBoundsException(sprintf('Bulk index cannot be negative: %d', $bulkIndex));
+        }
+
+        if (isset($this->indexMap[$bulkIndex])) {
+            throw new OutOfBoundsException(sprintf('Document already exists for bulk index: %d', $bulkIndex));
+        }
+
+        if ( ! is_object($document)) {
+            throw new UnexpectedTypeException($document, 'object');
+        }
+
         if (count($this->documents) >= BulkInterface::MAX_BATCH_SIZE_DOCS) {
             throw new OverflowException(sprintf('Batch size cannot exceed %d documents', BulkInterface::MAX_BATCH_SIZE_DOCS));
         }
@@ -56,22 +93,13 @@ class Batch
             ));
         }
 
+        $this->indexMap[$bulkIndex] = count($this->documents);
         $this->documents[] = $document;
         $this->bsonSize += $bsonSize;
     }
 
     /**
-     * Get the base index for the batch.
-     *
-     * @return integer
-     */
-    public function getBaseIndex()
-    {
-        return $this->baseIndex;
-    }
-
-    /**
-     * Get the total BSON size of documents in the batch.
+     * Get the total BSON size of all documents in the batch.
      *
      * @return integer
      */
@@ -81,7 +109,39 @@ class Batch
     }
 
     /**
-     * Get the documents in the batch.
+     * Get the bulk index for a document by its batch index.
+     *
+     * @param integer $batchIndex
+     * @return integer
+     * @throws OutOfBoundsException if the batch has no document for $batchIndex
+     */
+    public function getBulkIndex($batchIndex)
+    {
+        if (($bulkIndex = array_search($batchIndex, $this->indexMap)) === false) {
+            throw new OutOfBoundsException(sprintf('No document exists for batch index: %d', $batchIndex));
+        }
+
+        return $bulkIndex;
+    }
+
+    /**
+     * Get a document by its batch index.
+     *
+     * @param integer $batchIndex
+     * @return object
+     * @throws OutOfBoundsException if the batch has no document for $batchIndex
+     */
+    public function getDocument($batchIndex)
+    {
+        if ( ! isset($this->documents[$batchIndex])) {
+            throw new OutOfBoundsException(sprintf('No document exists for batch index: %d', $batchIndex));
+        }
+
+        return $this->documents[$batchIndex];
+    }
+
+    /**
+     * Get all documents in the batch.
      *
      * @return array
      */
@@ -101,7 +161,7 @@ class Batch
     }
 
     /**
-     * Get the batch type.
+     * Get the operation type.
      *
      * @return integer
      */
