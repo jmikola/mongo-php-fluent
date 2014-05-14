@@ -1,27 +1,95 @@
 <?php
 
-namespace MongoDB;
+namespace MongoDB\Batch\Legacy;
 
+use MongoDB\Batch\BatchInterface;
+use MongoDB\Exception\UnexpectedTypeException;
+use MongoCollection;
+use MongoDB;
 use UnexpectedValueException;
 
-class Util
+class LegacyWriteBatch implements BatchInterface
 {
     const ERR_UNKNOWN_ERROR = 8;
     const ERR_WRITE_CONCERN_FAILED = 64;
     const ERR_UNKNOWN_REPL_WRITE_CONCERN = 79;
     const ERR_NOT_MASTER = 10107;
 
+    private $db;
+
+    protected $collection;
+    protected $documents = array();
+    protected $writeOptions = array('ordered' => true);
+
     /**
-     * Parses a getLastError response and properly sets the write errors and
-     * write concern errors.
+     * Constructor.
      *
-     * Should kept be up to date with BatchSafeWriter::extractGLEErrors in the
-     * MongoDB server.
+     * @param MongoDB         $db
+     * @param MongoCollection $collection
+     * @param array           $writeOptions Write concern and ordered options.
+     *                                      Ordered will default to true.
+     */
+    public function __construct(MongoDB $db, MongoCollection $collection, array $writeOptions = array())
+    {
+        $this->db = $db;
+        $this->collection = $collection;
+        $this->writeOptions = array_merge($this->writeOptions, $writeOptions);
+    }
+
+    /**
+     * Adds a document to the batch.
      *
-     * @param array $gleResponse
+     * @see BatchInterface::add()
+     * @param object $document
+     * @throws UnexpectedTypeException if $document is not an object
+     */
+    final public function add($document)
+    {
+        if ( ! is_object($document)) {
+            throw new UnexpectedTypeException($document, 'object');
+        }
+
+        $this->documents[] = $document;
+    }
+
+    /**
+     * Execute the batch using legacy write operations.
+     *
+     * @see BatchInterface::execute()
+     * @param array $writeOptions
      * @return array
      */
-    public static function extractGLEErrors(array $gle)
+    abstract public function execute(array $writeOptions = array());
+
+    /**
+     * Applies a write concern and returns the equivalent write command response
+     * document.
+     *
+     * @param array $writeOptions
+     * @return array
+     */
+    final protected function applyWriteConcern(array $writeOptions)
+    {
+        unset($writeOptions['ordered']);
+
+        $this->db->command(array('resetError' => 1));
+        $gle = $this->db->command(array('getlasterror' => 1) + $writeOptions);
+
+        return $this->parseGetLastErrorResponse($gle);
+    }
+
+    /**
+     * Parses a getLastError response and returns an equivalent write command
+     * response document.
+     *
+     * This should kept be up to date with BatchSafeWriter::extractGLEErrors in
+     * the MongoDB server.
+     *
+     * @param array $gle
+     * @return array
+     * @throws UnexpectedValueException if an unknown error is encountered
+     */
+    final protected function parseGetLastErrorResponse(array $gle)
     {
         $isOk    = ! empty($gle['ok']);
         $code    = ! empty($gle['code']) ? (integer) $gle['code'] : 0;

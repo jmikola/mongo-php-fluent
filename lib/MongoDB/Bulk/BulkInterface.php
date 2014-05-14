@@ -1,19 +1,12 @@
 <?php
 
-namespace MongoDB;
+namespace MongoDB\Bulk;
 
 use MongoDB\Exception\UnexpectedTypeException;
 use BadMethodCallException;
 
 interface BulkInterface
 {
-    const OP_INSERT = 1;
-    const OP_UPDATE = 2;
-    const OP_REMOVE = 3;
-
-    const MAX_BATCH_SIZE_DOCS = 1000;
-    const MAX_BATCH_SIZE_BYTES = 16777216;
-
     /**
      * Executes all scheduled write operations.
      *
@@ -21,7 +14,7 @@ interface BulkInterface
      * @return array
      * @throws BadMethodCallException if the bulk operations have already been executed
      */
-    public function execute(array $writeConcern = null);
+    public function execute(array $writeConcern = array());
 
     /**
      * Sets the query selector for the next update or remove operation.
@@ -39,6 +32,13 @@ interface BulkInterface
      * @throws UnexpectedTypeException if $document is neither an array nor an object
      */
     public function insert($document);
+
+    /**
+     * Return whether bulk operations are ordered.
+     *
+     * @return boolean
+     */
+    public function isOrdered();
 
     /**
      * Adds a remove operation for all documents matching the current selector.
