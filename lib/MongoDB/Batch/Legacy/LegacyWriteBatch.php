@@ -14,6 +14,9 @@ class LegacyWriteBatch implements BatchInterface
     const ERR_WRITE_CONCERN_FAILED = 64;
     const ERR_UNKNOWN_REPL_WRITE_CONCERN = 79;
     const ERR_NOT_MASTER = 10107;
+    const ERR_GLE_WMODE_CHANGED_INVALID = 14330;
+    const ERR_NO_LONGER_PRIMARY = 19900;
+    const ERR_NO_LONGER_PRIMARY_REPLICATEDTONUM = 16805;
 
     private $db;
 
@@ -125,9 +128,9 @@ class LegacyWriteBatch implements BatchInterface
             return $extractedError;
         }
 
-        if ($code === 19900 || // No longer primary
-            $code === 16805 || // replicatedToNum no longer primary
-            $code === 14330 || // gle wmode changed; invalid
+        if ($code === self::ERR_NO_LONGER_PRIMARY ||
+            $code === self::ERR_NO_LONGER_PRIMARY_REPLICATEDTONUM ||
+            $code === self::ERR_GLE_WMODE_CHANGED_INVALID ||
             $code === self::ERR_NOT_MASTER ||
             $code === self::ERR_UNKNOWN_REPL_WRITE_CONCERN ||
             $code === self::ERR_WRITE_CONCERN_FAILED) {
