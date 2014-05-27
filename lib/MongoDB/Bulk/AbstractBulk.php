@@ -127,11 +127,16 @@ abstract class AbstractBulk implements BulkInterface
      * Adds a remove operation for all documents matching the current selector.
      *
      * @see BulkInterface::remove()
+     * @throws BadMethodCallException if find() has not been called previously
      */
     final public function remove()
     {
+        if ( ! isset($this->currentOp['q'])) {
+            throw new BadMethodCallException('find() must be called before remove()');
+        }
+
         $document = (object) array(
-            'q' => empty($this->currentOp['q']) ? new stdClass : $this->currentOp['q'],
+            'q' => $this->currentOp['q'],
             'limit' => 0,
         );
 
@@ -144,11 +149,16 @@ abstract class AbstractBulk implements BulkInterface
      * Adds a remove operation for one document matching the current selector.
      *
      * @see BulkInterface::removeOne()
+     * @throws BadMethodCallException if find() has not been called previously
      */
     final public function removeOne()
     {
+        if ( ! isset($this->currentOp['q'])) {
+            throw new BadMethodCallException('find() must be called before removeOne()');
+        }
+
         $document = (object) array(
-            'q' => empty($this->currentOp['q']) ? new stdClass : $this->currentOp['q'],
+            'q' => $this->currentOp['q'],
             'limit' => 1,
         );
 
@@ -164,10 +174,15 @@ abstract class AbstractBulk implements BulkInterface
      *
      * @see BulkInterface::update()
      * @param array|object $newObj
+     * @throws BadMethodCallException if find() has not been called previously
      * @throws UnexpectedTypeException if $newObj is neither an array nor an object
      */
     final public function update($newObj)
     {
+        if ( ! isset($this->currentOp['q'])) {
+            throw new BadMethodCallException('find() must be called before update()');
+        }
+
         if (is_array($newObj)) {
             $newObj = (object) $newObj;
         }
@@ -177,7 +192,7 @@ abstract class AbstractBulk implements BulkInterface
         }
 
         $document = (object) array(
-            'q' => empty($this->currentOp['q']) ? new stdClass : $this->currentOp['q'],
+            'q' => $this->currentOp['q'],
             'u' => $newObj,
             'multi' => empty($this->currentOp['upsert']),
             'upsert' => ( ! empty($this->currentOp['upsert'])),
@@ -193,10 +208,15 @@ abstract class AbstractBulk implements BulkInterface
      *
      * @see BulkInterface::updateOne()
      * @param array|object $newObj
+     * @throws BadMethodCallException if find() has not been called previously
      * @throws UnexpectedTypeException if $newObj is neither an array nor an object
      */
     final public function updateOne($newObj)
     {
+        if ( ! isset($this->currentOp['q'])) {
+            throw new BadMethodCallException('find() must be called before updateOne()');
+        }
+
         if (is_array($newObj)) {
             $newObj = (object) $newObj;
         }
@@ -206,7 +226,7 @@ abstract class AbstractBulk implements BulkInterface
         }
 
         $document = (object) array(
-            'q' => empty($this->currentOp['q']) ? new stdClass : $this->currentOp['q'],
+            'q' => $this->currentOp['q'],
             'u' => $newObj,
             'multi' => false,
             'upsert' => ( ! empty($this->currentOp['upsert'])),

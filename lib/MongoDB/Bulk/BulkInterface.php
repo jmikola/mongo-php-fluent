@@ -42,11 +42,15 @@ interface BulkInterface
 
     /**
      * Adds a remove operation for all documents matching the current selector.
+     *
+     * @throws BadMethodCallException if find() has not been called previously
      */
     public function remove();
 
     /**
      * Adds a remove operation for one document matching the current selector.
+     *
+     * @throws BadMethodCallException if find() has not been called previously
      */
     public function removeOne();
 
@@ -56,6 +60,7 @@ interface BulkInterface
      * If the upsert option is true, only a single document will be updated.
      *
      * @param array|object $newObj
+     * @throws BadMethodCallException if find() has not been called previously
      * @throws UnexpectedTypeException if $newObj is neither an array nor an object
      */
     public function update($newObj);
@@ -64,6 +69,7 @@ interface BulkInterface
      * Adds an update operation for one document matching the current selector.
      *
      * @param array|object $newObj
+     * @throws BadMethodCallException if find() has not been called previously
      * @throws UnexpectedTypeException if $newObj is neither an array nor an object
      */
     public function updateOne($newObj);
