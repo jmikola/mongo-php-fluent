@@ -8,10 +8,10 @@ use MongoDB\Batch\MappedBatch;
 final class BulkResult
 {
     public $nInserted = 0;
-    public $nUpserted = 0;
-    public $nUpdated = 0;
+    public $nMatched = 0;
     public $nModified = 0;
     public $nRemoved = 0;
+    public $nUpserted = 0;
     public $writeErrors = array();
     public $writeConcernErrors = array();
     public $upserted = array();
@@ -29,16 +29,21 @@ final class BulkResult
          */
 
         if ($batch->getType() === BatchInterface::OP_INSERT) {
-            $this->nInserted += $batchResult['n'];
+            $this->nInserted += $batchResult['nInserted'];
         }
 
         if ($batch->getType() === BatchInterface::OP_DELETE) {
-            $this->nRemoved += $batchResult['n'];
+            $this->nRemoved += $batchResult['nRemoved'];
         }
 
         if ($batch->getType() === BatchInterface::OP_UPDATE) {
-            $nModified = ! empty($batchResult['nModified']) ? $batchResult['nModified'] : 0;
-            $nUpserted = 0;
+            $this->nMatched  += $batchResult['nMatched'];
+            $this->nUpserted += $batchResult['nUpserted'];
+
+            // Legacy servers cannot report nModified, so respect null values
+            $this->nModified = isset($this->nModified, $batchResult['nModified'])
+                ? $this->nModified + $batchResult['nModified']
+                : null;
 
             // Handle case where only a single document was updated
             if (isset($batchResult['upserted']['index'])) {
@@ -50,13 +55,7 @@ final class BulkResult
                     $upsert['index'] = $batch->getBulkIndex($upsert['index']);
                     $this->upserted[] = $upsert;
                 }
-
-                $nUpserted = count($batchResult['upserted']);
             }
-
-            $this->nModified += $nModified;
-            $this->nUpserted += $nUpserted;
-            $this->nUpdated += $batchResult['n'] - $nUpserted;
         }
 
         if ( ! empty($batchResult['writeErrors']) && is_array($batchResult['writeErrors'])) {

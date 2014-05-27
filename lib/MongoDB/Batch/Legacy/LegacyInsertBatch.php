@@ -2,28 +2,24 @@
 
 namespace MongoDB\Batch\Legacy;
 
-use BadMethodCallException;
+use MongoDB\Batch\BatchInterface;
+use MongoException;
 
 final class LegacyInsertBatch extends LegacyWriteBatch
 {
     /**
-     * Execute the batch using legacy write operations.
-     *
-     * @see LegacyWriteBatch::execute()
-     * @param array $writeOptions
-     * @return array
-     * @throws BadMethodCallException if the batch is empty
+     * @see BatchInterface::execute()
      */
     public function execute(array $writeOptions = array())
     {
         if (empty($this->documents)) {
-            throw new BadMethodCallException('Cannot call execute() for an empty batch');
+            throw new MongoException('Cannot call execute() for an empty batch');
         }
 
         $writeOptions = array_merge($this->writeOptions, $writeOptions);
 
         $result = array(
-            'n' => 0,
+            'nInserted' => 0,
             'writeErrors' => array(),
             'writeConcernErrors' => array(),
         );
@@ -33,6 +29,7 @@ final class LegacyInsertBatch extends LegacyWriteBatch
                 break;
             }
 
+            // TODO: Catch exceptions and capture GLE responses
             $gle = $this->collection->insert($document, array('w' => 1));
 
             $err = $this->parseGetLastErrorResponse($gle);
@@ -48,7 +45,7 @@ final class LegacyInsertBatch extends LegacyWriteBatch
                 continue;
             }
 
-            $result['n'] += 1;
+            $result['nInserted'] += 1;
         }
 
         if (empty($result['writeErrors']) ||
@@ -62,5 +59,13 @@ final class LegacyInsertBatch extends LegacyWriteBatch
         }
 
         return $result;
+    }
+
+    /**
+     * @see BatchInterface::getType()
+     */
+    public function getType()
+    {
+        return BatchInterface::OP_INSERT;
     }
 }

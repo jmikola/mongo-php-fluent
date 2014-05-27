@@ -2,28 +2,24 @@
 
 namespace MongoDB\Batch\Legacy;
 
-use BadMethodCallException;
+use MongoDB\Batch\BatchInterface;
+use MongoException;
 
 final class LegacyDeleteBatch extends LegacyWriteBatch
 {
     /**
-     * Execute the batch using legacy write operations.
-     *
-     * @see LegacyWriteBatch::execute()
-     * @param array $writeOptions
-     * @return array
-     * @throws BadMethodCallException if the batch is empty
+     * @see BatchInterface::execute()
      */
     public function execute(array $writeOptions = array())
     {
         if (empty($this->documents)) {
-            throw new BadMethodCallException('Cannot call execute() for an empty batch');
+            throw new MongoException('Cannot call execute() for an empty batch');
         }
 
         $writeOptions = array_merge($this->writeOptions, $writeOptions);
 
         $result = array(
-            'n' => 0,
+            'nRemoved' => 0,
             'writeErrors' => array(),
             'writeConcernErrors' => array(),
         );
@@ -33,6 +29,7 @@ final class LegacyDeleteBatch extends LegacyWriteBatch
                 break;
             }
 
+            // TODO: Catch exceptions and capture GLE responses
             $gle = $this->collection->remove($document['q'], array(
                 'w' => 1,
                 'justOne' => ($document['limit'] === 1),
@@ -50,7 +47,7 @@ final class LegacyDeleteBatch extends LegacyWriteBatch
             }
 
             if ( ! empty($gle['n'])) {
-                $result['n'] += (integer) $gle['n'];
+                $result['nRemoved'] += (integer) $gle['n'];
             }
         }
 
@@ -65,5 +62,13 @@ final class LegacyDeleteBatch extends LegacyWriteBatch
         }
 
         return $result;
+    }
+
+    /**
+     * @see BatchInterface::getType()
+     */
+    public function getType()
+    {
+        return BatchInterface::OP_DELETE;
     }
 }

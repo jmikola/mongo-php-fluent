@@ -2,82 +2,42 @@
 
 namespace MongoDB\Batch;
 
-use MongoDB\Batch\Legacy\LegacyDeleteBatch;
-use MongoDB\Batch\Legacy\LegacyInsertBatch;
-use MongoDB\Batch\Legacy\LegacyUpdateBatch;
 use MongoDB\Batch\Legacy\LegacyWriteBatch;
 use MongoDB\Exception\UnexpectedTypeException;
-use BadMethodCallException;
-use InvalidArgumentException;
-use MongoDeleteBatch;
-use MongoInsertBatch;
-use MongoUpdateBatch;
-use MongoWriteBatch;
 use OutOfBoundsException;
+use MongoException;
 
 /**
- * This class composes a LegacyWriteBatch or MongoWriteBatch instance and also
- * maintains a map of bulk indexes to the corresponding batch index, which is
- * needed to merge multiple batch results into a single bulk result.
+ * This class composes a BatchInterface instance and also maintains a map of
+ * bulk indexes to the corresponding batch index, which is needed to merge
+ * multiple batch results into a single bulk result.
  */
 final class MappedBatch implements BatchInterface
 {
     private $batch;
     private $documents = array();
     private $indexMap = array();
-    private $type;
 
     /**
      * Constructor.
      *
-     * @param LegacyWriteBatch|MongoWriteBatch $batch
-     * @throws UnexpectedTypeException if $batch is not an object
-     * @throws InvalidArgumentException if the batch type cannot be inferred
+     * @param BatchInterface $batch
      */
-    public function __construct($batch)
+    public function __construct(BatchInterface $batch)
     {
-        if ( ! is_object($batch)) {
-            throw new UnexpectedTypeException($batch, 'object');
-        }
-
-        switch (true) {
-            case $batch instanceof MongoInsertBatch:
-            case $batch instanceof LegacyInsertBatch:
-                $this->type = BatchInterface::OP_INSERT;
-                break;
-
-            case $batch instanceof MongoUpdateBatch:
-            case $batch instanceof LegacyUpdateBatch:
-                $this->type = BatchInterface::OP_UPDATE;
-                break;
-
-            case $batch instanceof MongoDeleteBatch:
-            case $batch instanceof LegacyDeleteBatch:
-                $this->type = BatchInterface::OP_DELETE;
-                break;
-
-            default:
-                throw new InvalidArgumentException(sprintf('Could not infer type from class: %s', get_class($batch)));
-        }
-
         $this->batch = $batch;
     }
 
     /**
      * Adds an operation document to the batch.
      *
-     * @param object  $document
-     * @param integer $bulkIndex
+     * @param array|object $document
+     * @param integer      $bulkIndex
      * @throws OutOfBoundsException if $bulkIndex is negative or the batch
      *                              already contains a document for $bulkIndex
-     * @throws UnexpectedTypeException if $document is not an object
      */
     public function add($document, $bulkIndex = 0)
     {
-        if ( ! is_object($document)) {
-            throw new UnexpectedTypeException($document, 'object');
-        }
-
         $bulkIndex = (integer) $bulkIndex;
 
         if ($bulkIndex < 0) {
@@ -94,16 +54,12 @@ final class MappedBatch implements BatchInterface
     }
 
     /**
-     * Execute the batch.
-     *
-     * @param array $writeOptions Write concern and ordered options.
-     * @return array
-     * @throws BadMethodCallException if the batch is empty
+     * @see BatchInterface::execute()
      */
     public function execute(array $writeOptions = array())
     {
         if ($this->isEmpty()) {
-            throw new BadMethodCallException('Cannot call execute() for an empty batch');
+            throw new MongoException('Cannot call execute() for an empty batch');
         }
 
         return $this->batch->execute($writeOptions);
@@ -126,13 +82,19 @@ final class MappedBatch implements BatchInterface
     }
 
     /**
-     * Get the type of operations in the batch.
-     *
-     * @return integer
+     * @see BatchInterface::getItemCount()
+     */
+    public function getItemCount()
+    {
+        return $this->batch->getItemCount();
+    }
+
+    /**
+     * @see BatchInterface::getType()
      */
     public function getType()
     {
-        return $this->type;
+        return $this->batch->getType();
     }
 
     /**

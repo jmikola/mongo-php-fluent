@@ -2,15 +2,15 @@
 
 namespace MongoDB\Batch;
 
+use MongoDB\Batch\Command\CommandDeleteBatch;
+use MongoDB\Batch\Command\CommandInsertBatch;
+use MongoDB\Batch\Command\CommandUpdateBatch;
 use MongoDB\Batch\Legacy\LegacyDeleteBatch;
 use MongoDB\Batch\Legacy\LegacyInsertBatch;
 use MongoDB\Batch\Legacy\LegacyUpdateBatch;
 use InvalidArgumentException;
 use Iterator;
 use MongoClient;
-use MongoDeleteBatch;
-use MongoInsertBatch;
-use MongoUpdateBatch;
 
 abstract class AbstractGenerator implements Iterator
 {
@@ -109,11 +109,13 @@ abstract class AbstractGenerator implements Iterator
     }
 
     /**
-     * Create a LegacyWriteBatch or MongoWriteBatch instance for the operation
-     * type, depending on whether the client connection supports write commands.
+     * Create a BatchInterface instance for the operation type.
+     *
+     * The batch implementation returned will depend on whether or not the
+     * client connection supports write commands.
      *
      * @param integer $type
-     * @return LegacyWriteBatch|MongoWriteBatch
+     * @return BatchInterface
      * @throws InvalidArgumentException if $type is invalid
      */
     final protected function createBatchForType($type)
@@ -121,17 +123,17 @@ abstract class AbstractGenerator implements Iterator
         switch ($type) {
             case BatchInterface::OP_INSERT:
                 return $this->isWriteApiSupported()
-                    ? new MongoInsertBatch($this->collection, $this->writeOptions)
+                    ? new CommandInsertBatch($this->collection, $this->writeOptions)
                     : new LegacyInsertBatch($this->db, $this->collection, $this->writeOptions);
 
             case BatchInterface::OP_UPDATE:
                 return $this->isWriteApiSupported()
-                    ? new MongoUpdateBatch($this->collection, $this->writeOptions)
+                    ? new CommandUpdateBatch($this->collection, $this->writeOptions)
                     : new LegacyUpdateBatch($this->db, $this->collection, $this->writeOptions);
 
             case BatchInterface::OP_DELETE:
                 return $this->isWriteApiSupported()
-                    ? new MongoDeleteBatch($this->collection, $this->writeOptions)
+                    ? new CommandDeleteBatch($this->collection, $this->writeOptions)
                     : new LegacyDeleteBatch($this->db, $this->collection, $this->writeOptions);
 
             default:

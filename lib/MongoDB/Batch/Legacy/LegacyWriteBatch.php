@@ -3,12 +3,11 @@
 namespace MongoDB\Batch\Legacy;
 
 use MongoDB\Batch\BatchInterface;
-use MongoDB\Exception\UnexpectedTypeException;
 use MongoCollection;
 use MongoDB;
 use UnexpectedValueException;
 
-class LegacyWriteBatch implements BatchInterface
+abstract class LegacyWriteBatch implements BatchInterface
 {
     const ERR_UNKNOWN_ERROR = 8;
     const ERR_WRITE_CONCERN_FAILED = 64;
@@ -40,29 +39,20 @@ class LegacyWriteBatch implements BatchInterface
     }
 
     /**
-     * Adds a document to the batch.
-     *
      * @see BatchInterface::add()
-     * @param object $document
-     * @throws UnexpectedTypeException if $document is not an object
      */
     final public function add($document)
     {
-        if ( ! is_object($document)) {
-            throw new UnexpectedTypeException($document, 'object');
-        }
-
         $this->documents[] = $document;
     }
 
     /**
-     * Execute the batch using legacy write operations.
-     *
-     * @see BatchInterface::execute()
-     * @param array $writeOptions
-     * @return array
+     * @see BatchInterface::getItemCount()
      */
-    abstract public function execute(array $writeOptions = array());
+    final public function getItemCount()
+    {
+        return count($this->documents);
+    }
 
     /**
      * Applies a write concern and returns the equivalent write command response

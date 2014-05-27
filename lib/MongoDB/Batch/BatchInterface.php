@@ -3,7 +3,7 @@
 namespace MongoDB\Batch;
 
 use MongoDB\Exception\UnexpectedTypeException;
-use BadMethodCallException;
+use MongoException;
 
 interface BatchInterface
 {
@@ -12,10 +12,9 @@ interface BatchInterface
     const OP_DELETE = 3;
 
     /**
-     * Adds an operation document to the batch.
+     * Adds an operation to the batch.
      *
-     * @param object  $document
-     * @throws UnexpectedTypeException if $document is not an object
+     * @param array|object $document
      */
     public function add($document);
 
@@ -24,7 +23,21 @@ interface BatchInterface
      *
      * @param array $writeOptions Write concern and ordered options.
      * @return array
-     * @throws BadMethodCallException if the batch is empty
+     * @throws MongoException if the batch is empty
      */
     public function execute(array $writeOptions = array());
+
+    /**
+     * Return the number of operations in this batch.
+     *
+     * @return integer
+     */
+    public function getItemCount();
+
+    /**
+     * Return the type of operations in this batch.
+     *
+     * @return integer
+     */
+    public function getType();
 }

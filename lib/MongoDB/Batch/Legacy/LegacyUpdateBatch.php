@@ -2,29 +2,27 @@
 
 namespace MongoDB\Batch\Legacy;
 
-use BadMethodCallException;
+use MongoDB\Batch\BatchInterface;
+use MongoException;
 use RuntimeException;
 
 final class LegacyUpdateBatch extends LegacyWriteBatch
 {
     /**
-     * Execute the batch using legacy write operations.
-     *
-     * @see LegacyWriteBatch::execute()
-     * @param array $writeOptions
-     * @return array
-     * @throws BadMethodCallException if the batch is empty
+     * @see BatchInterface::execute()
      */
     public function execute(array $writeOptions = array())
     {
         if (empty($this->documents)) {
-            throw new BadMethodCallException('Cannot call execute() for an empty batch');
+            throw new MongoException('Cannot call execute() for an empty batch');
         }
 
         $writeOptions = array_merge($this->writeOptions, $writeOptions);
 
         $result = array(
-            'n' => 0,
+            'nMatched' => 0,
+            'nModified' => null,
+            'nUpserted' => 0,
             'writeErrors' => array(),
             'writeConcernErrors' => array(),
         );
@@ -34,6 +32,7 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
                 break;
             }
 
+            // TODO: Catch exceptions and capture GLE responses
             $gle = $this->collection->update($document['q'], $document['u'], array(
                 'w' => 1,
                 'upsert' => $document['upsert'],
@@ -52,7 +51,7 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
             }
 
             if ($document['upsert'] && empty($gle['updatedExisting'])) {
-                $result['n'] += 1;
+                $result['nUpserted'] += 1;
                 $result['upserted'][] = array(
                     'index' => $batchIndex,
                     '_id' => $this->getUpsertedId($document, $gle),
@@ -62,7 +61,7 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
             }
 
             if ( ! empty($gle['n'])) {
-                $result['n'] += (integer) $gle['n'];
+                $result['nMatched'] += (integer) $gle['n'] - (empty($gle['updatedExisting']) ? 0 : 1);
             }
         }
 
@@ -77,6 +76,14 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
         }
 
         return $result;
+    }
+
+    /**
+     * @see BatchInterface::getType()
+     */
+    public function getType()
+    {
+        return BatchInterface::OP_UPDATE;
     }
 
     /**
