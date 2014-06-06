@@ -193,9 +193,9 @@ abstract class LegacyWriteBatch implements BatchInterface
     /**
      * Execute a single write operation.
      *
-     * @param integer $batchIndex Batch index of the write operation
-     * @param array   $document   Write operation
-     * @param array   $result     Batch execution result (will be modified)
+     * @param integer      $batchIndex Batch index of the write operation
+     * @param array|object $document   Write operation
+     * @param array        $result     Batch execution result (will be modified)
      */
-    abstract protected function executeSingleOperation($batchIndex, array $document, array &$result);
+    abstract protected function executeSingleOperation($batchIndex, $document, array &$result);
 }

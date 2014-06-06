@@ -256,8 +256,8 @@ abstract class AbstractBulk implements BulkInterface
     /**
      * Adds a write operation.
      *
-     * @param integer $type
-     * @param object  $document
+     * @param integer      $type
+     * @param array|object $document
      */
     private function addOperation($type, $document)
     {

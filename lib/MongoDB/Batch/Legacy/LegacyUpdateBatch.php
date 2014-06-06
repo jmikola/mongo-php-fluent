@@ -66,7 +66,7 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
     /**
      * @see LegacyWriteBatch::executeSingleOperation()
      */
-    protected function executeSingleOperation($batchIndex, array $document, array &$result)
+    protected function executeSingleOperation($batchIndex, $document, array &$result)
     {
         try {
             $gle = $this->collection->update($document['q'], $document['u'], array(

@@ -44,7 +44,7 @@ final class LegacyInsertBatch extends LegacyWriteBatch
     /**
      * @see LegacyWriteBatch::executeSingleOperation()
      */
-    protected function executeSingleOperation($batchIndex, array $document, array &$result)
+    protected function executeSingleOperation($batchIndex, $document, array &$result)
     {
         try {
             $gle = $this->collection->insert($document, array('w' => 1));

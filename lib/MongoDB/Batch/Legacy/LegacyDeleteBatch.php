@@ -61,7 +61,7 @@ final class LegacyDeleteBatch extends LegacyWriteBatch
     /**
      * @see LegacyWriteBatch::executeSingleOperation()
      */
-    protected function executeSingleOperation($batchIndex, array $document, array &$result)
+    protected function executeSingleOperation($batchIndex, $document, array &$result)
     {
         try {
             $gle = $this->collection->remove($document['q'], array(
