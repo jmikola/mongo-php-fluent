@@ -5,6 +5,7 @@ namespace MongoDB\Batch\Legacy;
 use MongoDB\Batch\BatchInterface;
 use MongoCollection;
 use MongoDB;
+use MongoException;
 use UnexpectedValueException;
 
 abstract class LegacyWriteBatch implements BatchInterface
@@ -36,6 +37,39 @@ abstract class LegacyWriteBatch implements BatchInterface
         $this->db = $db;
         $this->collection = $collection;
         $this->writeOptions = array_merge($this->writeOptions, $writeOptions);
+    }
+
+    /**
+     * @see BatchInterface::execute()
+     */
+    final public function execute(array $writeOptions = array())
+    {
+        if (empty($this->documents)) {
+            throw new MongoException('Cannot call execute() for an empty batch');
+        }
+
+        $result = $this->createEmptyResult();
+        $writeOptions = array_merge($this->writeOptions, $writeOptions);
+
+        foreach ($this->documents as $batchIndex => $document) {
+            if ($writeOptions['ordered'] && ! empty($result['writeErrors'])) {
+                break;
+            }
+
+            $this->executeSingleOperation($batchIndex, $document, $result);
+        }
+
+        if (empty($result['writeErrors']) ||
+            ( ! $writeOptions['ordered'] && count($result['writeErrors']) < count($this->documents))) {
+
+            $err = $this->applyWriteConcern($writeOptions);
+        }
+
+        if (isset($err) && $err['wcError'] !== null) {
+            $result['writeConcernErrors'][] = $err['wcError'];
+        }
+
+        return $result;
     }
 
     /**
@@ -149,4 +183,20 @@ abstract class LegacyWriteBatch implements BatchInterface
 
         return $extractedError;
     }
+
+    /**
+     * Return an empty result array for execute().
+     *
+     * @return array
+     */
+    abstract protected function createEmptyResult();
+
+    /**
+     * Execute a single write operation.
+     *
+     * @param integer $batchIndex Batch index of the write operation
+     * @param array   $document   Write operation
+     * @param array   $result     Batch execution result (will be modified)
+     */
+    abstract protected function executeSingleOperation($batchIndex, array $document, array &$result);
 }
