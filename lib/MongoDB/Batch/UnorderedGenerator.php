@@ -68,7 +68,7 @@ final class UnorderedGenerator extends AbstractGenerator
             /* Empty batches should never be executed, so unset the current
              * batch and allow the next type's batch to be initialized.
              */
-            if ($this->currentBatch->isEmpty()) {
+            if ($this->currentBatch->getItemCount() == 0) {
                 $this->currentBatch = null;
             }
         }

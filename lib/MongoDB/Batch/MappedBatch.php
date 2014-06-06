@@ -15,7 +15,6 @@ use MongoException;
 final class MappedBatch implements BatchInterface
 {
     private $batch;
-    private $documents = array();
     private $indexMap = array();
 
     /**
@@ -49,7 +48,6 @@ final class MappedBatch implements BatchInterface
         }
 
         $this->indexMap[$bulkIndex] = count($this->documents);
-        $this->documents[] = $document;
         $this->batch->add($document);
     }
 
@@ -58,7 +56,7 @@ final class MappedBatch implements BatchInterface
      */
     public function execute(array $writeOptions = array())
     {
-        if ($this->isEmpty()) {
+        if ($this->batch->getItemCount() == 0) {
             throw new MongoException('Cannot call execute() for an empty batch');
         }
 
@@ -95,15 +93,5 @@ final class MappedBatch implements BatchInterface
     public function getType()
     {
         return $this->batch->getType();
-    }
-
-    /**
-     * Return whether the batch is empty and contains no operations.
-     *
-     * @return boolean
-     */
-    public function isEmpty()
-    {
-        return empty($this->documents);
     }
 }
