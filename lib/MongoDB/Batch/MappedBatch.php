@@ -47,8 +47,9 @@ final class MappedBatch implements BatchInterface
             throw new OutOfBoundsException(sprintf('Document already exists for bulk index: %d', $bulkIndex));
         }
 
-        $this->indexMap[$bulkIndex] = count($this->documents);
+        $batchIndex = (integer) $this->batch->getItemCount();
         $this->batch->add($document);
+        $this->indexMap[$bulkIndex] = $batchIndex;
     }
 
     /**
