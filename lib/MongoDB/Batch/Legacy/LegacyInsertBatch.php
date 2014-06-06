@@ -3,10 +3,24 @@
 namespace MongoDB\Batch\Legacy;
 
 use MongoDB\Batch\BatchInterface;
+use MongoDB\Exception\UnexpectedTypeException;
 use MongoException;
 
 final class LegacyInsertBatch extends LegacyWriteBatch
 {
+    /**
+     * @see BatchInterface::add()
+     * @throws UnexpectedTypeException if $document is neither an array nor an object
+     */
+    public function add($document)
+    {
+        if ( ! is_array($document) && ! is_object($document)) {
+            throw new UnexpectedTypeException($document, 'array or object');
+        }
+
+        $this->documents[] = $document;
+    }
+
     /**
      * @see BatchInterface::execute()
      */

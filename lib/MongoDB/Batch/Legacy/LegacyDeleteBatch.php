@@ -3,10 +3,40 @@
 namespace MongoDB\Batch\Legacy;
 
 use MongoDB\Batch\BatchInterface;
+use MongoDB\Exception\UnexpectedTypeException;
 use MongoException;
 
 final class LegacyDeleteBatch extends LegacyWriteBatch
 {
+    /**
+     * @see BatchInterface::add()
+     * @throws MongoException if $document does not contain "q" and "limit" keys
+     * @throws UnexpectedTypeException if $document is neither an array nor an object
+     */
+    public function add($document)
+    {
+        if (is_object($document)) {
+            $document = (array) $document;
+        }
+
+        if ( ! is_array($document)) {
+            throw new UnexpectedTypeException($document, 'array or object');
+        }
+
+        if ( ! array_key_exists('q', $document)) {
+            throw new MongoException('Expected $document to contain \'q\' key');
+        }
+
+        if ( ! array_key_exists('limit', $document)) {
+            throw new MongoException('Expected $document to contain \'limit\' key');
+        }
+
+        $document['q'] = (array) $document['q'];
+        $document['limit'] = (integer) $document['limit'];
+
+        $this->documents[] = $document;
+    }
+
     /**
      * @see BatchInterface::execute()
      */

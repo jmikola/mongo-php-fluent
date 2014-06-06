@@ -39,14 +39,6 @@ abstract class LegacyWriteBatch implements BatchInterface
     }
 
     /**
-     * @see BatchInterface::add()
-     */
-    final public function add($document)
-    {
-        $this->documents[] = $document;
-    }
-
-    /**
      * @see BatchInterface::getItemCount()
      */
     final public function getItemCount()

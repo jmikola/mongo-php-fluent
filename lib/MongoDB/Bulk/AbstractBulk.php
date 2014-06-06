@@ -82,11 +82,7 @@ abstract class AbstractBulk implements BulkInterface
      */
     final public function find($query)
     {
-        if (is_array($query)) {
-            $query = (object) $query;
-        }
-
-        if ( ! is_object($query)) {
+        if ( ! is_array($query) && ! is_object($query)) {
             throw new UnexpectedTypeException($query, 'array or object');
         }
 
@@ -104,11 +100,7 @@ abstract class AbstractBulk implements BulkInterface
      */
     final public function insert($document)
     {
-        if (is_array($document)) {
-            $document = (object) $document;
-        }
-
-        if ( ! is_object($document)) {
+        if ( ! is_array($document) && ! is_object($document)) {
             throw new UnexpectedTypeException($document, 'array or object');
         }
 
@@ -135,7 +127,7 @@ abstract class AbstractBulk implements BulkInterface
             throw new BadMethodCallException('find() must be called before remove()');
         }
 
-        $document = (object) array(
+        $document = array(
             'q' => $this->currentOp['q'],
             'limit' => 0,
         );
@@ -157,7 +149,7 @@ abstract class AbstractBulk implements BulkInterface
             throw new BadMethodCallException('find() must be called before removeOne()');
         }
 
-        $document = (object) array(
+        $document = array(
             'q' => $this->currentOp['q'],
             'limit' => 1,
         );
@@ -183,15 +175,11 @@ abstract class AbstractBulk implements BulkInterface
             throw new BadMethodCallException('find() must be called before update()');
         }
 
-        if (is_array($newObj)) {
-            $newObj = (object) $newObj;
-        }
-
-        if ( ! is_object($newObj)) {
+        if ( ! is_array($newObj) && ! is_object($newObj)) {
             throw new UnexpectedTypeException($newObj, 'array or object');
         }
 
-        $document = (object) array(
+        $document = array(
             'q' => $this->currentOp['q'],
             'u' => $newObj,
             'multi' => empty($this->currentOp['upsert']),
@@ -217,15 +205,11 @@ abstract class AbstractBulk implements BulkInterface
             throw new BadMethodCallException('find() must be called before updateOne()');
         }
 
-        if (is_array($newObj)) {
-            $newObj = (object) $newObj;
-        }
-
-        if ( ! is_object($newObj)) {
+        if ( ! is_array($newObj) && ! is_object($newObj)) {
             throw new UnexpectedTypeException($newObj, 'array or object');
         }
 
-        $document = (object) array(
+        $document = array(
             'q' => $this->currentOp['q'],
             'u' => $newObj,
             'multi' => false,
