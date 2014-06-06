@@ -2,7 +2,6 @@
 
 namespace MongoDB\Batch;
 
-use MongoDB\Exception\UnexpectedTypeException;
 use MongoException;
 
 interface BatchInterface

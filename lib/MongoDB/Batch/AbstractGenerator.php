@@ -53,7 +53,7 @@ abstract class AbstractGenerator implements Iterator
      * Return the current batch.
      *
      * @see Iterator::current()
-     * @return BatchInterface|null
+     * @return MappedBatch|null
      */
     public function current()
     {

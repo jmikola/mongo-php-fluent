@@ -2,10 +2,8 @@
 
 namespace MongoDB\Batch;
 
-use MongoDB\Batch\Legacy\LegacyWriteBatch;
-use MongoDB\Exception\UnexpectedTypeException;
-use OutOfBoundsException;
 use MongoException;
+use OutOfBoundsException;
 
 /**
  * This class composes a BatchInterface instance and also maintains a map of

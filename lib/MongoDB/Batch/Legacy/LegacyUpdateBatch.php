@@ -114,8 +114,8 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
      *
      * @see LegacyUpdateBatch::execute()
      * @see https://jira.mongodb.org/browse/DOCS-2589
-     * @param array $document Update operation
-     * @param array $gle      getLastError response
+     * @param array $operation Update operation
+     * @param array $gle       getLastError response
      * @return mixed
      * @throws RuntimeException if the upserted identifier cannot be determined
      */

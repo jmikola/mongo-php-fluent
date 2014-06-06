@@ -11,7 +11,7 @@ interface BulkInterface
      * Executes all scheduled write operations.
      *
      * @param array $writeConcern
-     * @return array
+     * @return BulkResult
      * @throws BadMethodCallException if the bulk operations have already been executed
      */
     public function execute(array $writeConcern = array());

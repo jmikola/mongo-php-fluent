@@ -38,7 +38,7 @@ abstract class AbstractBulk implements BulkInterface
      *
      * @see BulkInterface::execute()
      * @param array $writeConcern
-     * @return array
+     * @return BulkResult
      * @throws BadMethodCallException if the bulk operations have already been executed
      */
     final public function execute(array $writeConcern = array())
