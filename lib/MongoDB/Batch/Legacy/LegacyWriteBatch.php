@@ -18,9 +18,8 @@ abstract class LegacyWriteBatch implements BatchInterface
     const ERR_NO_LONGER_PRIMARY = 19900;
     const ERR_NO_LONGER_PRIMARY_REPLICATEDTONUM = 16805;
 
-    private $db;
-
     protected $collection;
+    protected $db;
     protected $documents = array();
     protected $writeOptions = array('ordered' => true);
 

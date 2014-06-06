@@ -4,6 +4,7 @@ namespace MongoDB\Batch\Legacy;
 
 use MongoDB\Batch\BatchInterface;
 use MongoDB\Exception\UnexpectedTypeException;
+use MongoCursorException;
 use MongoException;
 use RuntimeException;
 
@@ -67,12 +68,15 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
      */
     protected function executeSingleOperation($batchIndex, array $document, array &$result)
     {
-        // TODO: Catch exceptions and capture GLE responses
-        $gle = $this->collection->update($document['q'], $document['u'], array(
-            'w' => 1,
-            'upsert' => $document['upsert'],
-            'multiple' => $document['multi'],
-        ));
+        try {
+            $gle = $this->collection->update($document['q'], $document['u'], array(
+                'w' => 1,
+                'upsert' => $document['upsert'],
+                'multiple' => $document['multi'],
+            ));
+        } catch (MongoCursorException $e) {
+            $gle = $this->db->command(array('getlasterror' => 1));
+        }
 
         $err = $this->parseGetLastErrorResponse($gle);
 
