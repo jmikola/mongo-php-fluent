@@ -57,38 +57,35 @@ final class UnorderedGenerator extends AbstractGenerator
 
         while ($this->typesIndex < count($this->types)) {
             $type = $this->types[$this->typesIndex];
-
-            if ($this->currentBatch === null) {
-                $this->currentBatch = new MappedBatch($this->createBatchForType($type));
-            }
-
-            $this->populateBatch($this->currentBatch);
             $this->typesIndex += 1;
 
-            /* Empty batches should never be executed, so unset the current
-             * batch and allow the next type's batch to be initialized.
-             */
-            if ($this->currentBatch->getItemCount() == 0) {
-                $this->currentBatch = null;
+            $operations = array_filter($this->operations, function($operation) use ($type) {
+                // Operation tuple contains [$type, $document]
+                return $type === $operation[0];
+            });
+
+            if (empty($operations)) {
+                continue;
             }
+
+            $this->currentBatch = new MappedBatch($this->createBatchForType($type));
+            $this->populateBatch($this->currentBatch, $operations);
+
+            return;
         }
     }
 
     /**
-     * Populate the batch with all documents of its type.
+     * Populate the batch with the operations.
      *
      * @param MappedBatch $batch
+     * @param array       $operations
      */
-    private function populateBatch(MappedBatch $batch)
+    private function populateBatch(MappedBatch $batch, array $operations)
     {
-        $batchType = $batch->getType();
-
-        foreach ($this->operations as $bulkIndex => $operation) {
-            list($type, $document) = $operation;
-
-            if ($type === $batchType) {
-                $batch->add($document, $bulkIndex);
-            }
+        foreach ($operations as $bulkIndex => $operation) {
+            // Operation tuple contains [$type, $document]
+            $batch->add($operation[1], $bulkIndex);
         }
     }
 }
