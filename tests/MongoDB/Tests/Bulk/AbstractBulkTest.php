@@ -7,6 +7,17 @@ use MongoDB\Tests\BaseTestCase;
 abstract class AbstractBulkTest extends BaseTestCase
 {
     /**
+     * @expectedException BadMethodCallException
+     * @expectedExceptionMessage Cannot call execute() multiple times
+     */
+    public function testExecuteCannotBeInvokedMultipleTimes()
+    {
+        $bulk = $this->getBulk();
+        $bulk->execute();
+        $bulk->execute();
+    }
+
+    /**
      * @expectedException PHPUnit_Framework_Error_Warning
      * @expectedExceptionMessage Missing argument
      * @see https://jira.mongodb.org/browse/PHP-982
