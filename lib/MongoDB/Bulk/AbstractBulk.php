@@ -7,6 +7,8 @@ use MongoDB\Exception\UnexpectedTypeException;
 use BadMethodCallException;
 use InvalidArgumentException;
 use MongoClient;
+use MongoCollection;
+use MongoDB;
 use stdClass;
 
 abstract class AbstractBulk implements BulkInterface
@@ -22,15 +24,15 @@ abstract class AbstractBulk implements BulkInterface
     /**
      * Constructor.
      *
-     * @param MongoClient $client
-     * @param string      $db
-     * @param string      $collection
+     * @param MongoClient     $client     MongoClient instance
+     * @param MongoDB         $db         MongoDB instance
+     * @param MongoCollection $collection MongoCollection instance
      */
-    public function __construct(MongoClient $client, $db, $collection)
+    public function __construct(MongoClient $client, MongoDB $db, MongoCollection $collection)
     {
         $this->client = $client;
-        $this->db = (string) $db;
-        $this->collection = (string) $collection;
+        $this->db = $db;
+        $this->collection = $collection;
     }
 
     /**

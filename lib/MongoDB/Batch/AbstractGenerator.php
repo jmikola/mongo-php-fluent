@@ -11,6 +11,8 @@ use MongoDB\Batch\Legacy\LegacyUpdateBatch;
 use InvalidArgumentException;
 use Iterator;
 use MongoClient;
+use MongoCollection;
+use MongoDB;
 
 abstract class AbstractGenerator implements Iterator
 {
@@ -34,17 +36,17 @@ abstract class AbstractGenerator implements Iterator
     /**
      * Constructor.
      *
-     * @param MongoClient $client       MongoClient instance
-     * @param string      $db           Database name
-     * @param string      $collection   Collection name
-     * @param array       $operations   Operation type/document tuples
-     * @param array       $writeOptions Write concern and ordered options
+     * @param MongoClient     $client       MongoClient instance
+     * @param MongoDB         $db           MongoDB instance
+     * @param MongoCollection $collection   MongoCollection instance
+     * @param array           $operations   Operation type/document tuples
+     * @param array           $writeOptions Write concern and ordered options
      */
-    public function __construct(MongoClient $client, $db, $collection, array $operations, array $writeOptions)
+    public function __construct(MongoClient $client, MongoDB $db, MongoCollection $collection, array $operations, array $writeOptions)
     {
         $this->client = $client;
-        $this->db = $client->selectDB($db);
-        $this->collection = $client->selectCollection($db, $collection);
+        $this->db = $db;
+        $this->collection = $collection;
         $this->operations = $operations;
         $this->writeOptions = $writeOptions;
     }

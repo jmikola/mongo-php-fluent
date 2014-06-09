@@ -17,6 +17,6 @@ class UnorderedBulkTest extends AbstractBulkTest
      */
     protected function getBulk()
     {
-        return new UnorderedBulk($this->getMockMongoClient(), $this->getDatabase(), $this->getCollection());
+        return new UnorderedBulk($this->getMockMongoClient(), $this->getMockMongoDB(), $this->getMockMongoCollection());
     }
 }

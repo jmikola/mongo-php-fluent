@@ -17,6 +17,6 @@ class OrderedBulkTest extends AbstractBulkTest
      */
     protected function getBulk()
     {
-        return new OrderedBulk($this->getMockMongoClient(), $this->getDatabase(), $this->getCollection());
+        return new OrderedBulk($this->getMockMongoClient(), $this->getMockMongoDB(), $this->getMockMongoCollection());
     }
 }

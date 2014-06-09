@@ -3,6 +3,8 @@
 namespace MongoDB\Batch;
 
 use MongoClient;
+use MongoCollection;
+use MongoDB;
 
 final class UnorderedGenerator extends AbstractGenerator
 {
@@ -17,13 +19,13 @@ final class UnorderedGenerator extends AbstractGenerator
     /**
      * Constructor.
      *
-     * @param MongoClient $client       MongoClient instance
-     * @param string      $db           Database name
-     * @param string      $collection   Collection name
-     * @param array       $operations   Operation type/document tuples
-     * @param array       $writeConcern Write concern
+     * @param MongoClient     $client       MongoClient instance
+     * @param MongoDB         $db           MongoDB instance
+     * @param MongoCollection $collection   MongoCollection instance
+     * @param array           $operations   Operation type/document tuples
+     * @param array           $writeConcern Write concern
      */
-    public function __construct(MongoClient $client, $db, $collection, array $operations, array $writeConcern = array())
+    public function __construct(MongoClient $client, MongoDB $db, MongoCollection $collection, array $operations, array $writeConcern = array())
     {
         $writeOptions = array('ordered' => false) + $writeConcern;
 

@@ -22,4 +22,18 @@ class BaseTestCase extends \PHPUnit_Framework_TestCase
             ->disableOriginalConstructor()
             ->getMock();
     }
+
+    protected function getMockMongoCollection()
+    {
+        return $this->getMockBuilder('MongoCollection')
+            ->disableOriginalConstructor()
+            ->getMock();
+    }
+
+    protected function getMockMongoDB()
+    {
+        return $this->getMockBuilder('MongoDB')
+            ->disableOriginalConstructor()
+            ->getMock();
+    }
 }
