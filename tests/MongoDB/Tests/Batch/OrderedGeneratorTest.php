@@ -4,6 +4,7 @@ namespace MongoDB\Tests\Batch;
 
 use MongoDB\Batch\BatchInterface;
 use MongoDB\Batch\OrderedGenerator;
+use MongoDB\Stubs\MongoClient;
 
 class OrderedGeneratorTest extends AbstractGeneratorTest
 {
@@ -38,13 +39,6 @@ class OrderedGeneratorTest extends AbstractGeneratorTest
      */
     protected function getGenerator(array $operations = array(), array $writeOptions = array())
     {
-        $mongoClient = $this->getMockMongoClient();
-
-        // See: AbstractGenerator::isWriteApiSupported()
-        $mongoClient->staticExpects($this->any())
-            ->method('getConnections')
-            ->will($this->returnValue(array()));
-
-        return new OrderedGenerator($mongoClient, $this->getMockMongoDB(), $this->getMockMongoCollection(), $operations, $writeOptions);
+        return new OrderedGenerator(new MongoClient(), $this->getMockMongoDB(), $this->getMockMongoCollection(), $operations, $writeOptions);
     }
 }
