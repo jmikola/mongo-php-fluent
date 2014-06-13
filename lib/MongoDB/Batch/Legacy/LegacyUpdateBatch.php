@@ -114,6 +114,7 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
      *
      * @see LegacyUpdateBatch::execute()
      * @see https://jira.mongodb.org/browse/DOCS-2589
+     * @see https://jira.mongodb.org/browse/PHP-1116
      * @param array $operation Update operation
      * @param array $gle       getLastError response
      * @return mixed
@@ -125,12 +126,12 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
             return $gle['upserted'];
         }
 
-        if (isset($operation['q']['_id']) || array_key_exists('_id', $operation['q'])) {
-            return $operation['q']['_id'];
-        }
-
         if (isset($operation['u']['_id']) || array_key_exists('_id', $operation['u'])) {
             return $operation['u']['_id'];
+        }
+
+        if (isset($operation['q']['_id']) || array_key_exists('_id', $operation['q'])) {
+            return $operation['q']['_id'];
         }
 
         throw new RuntimeException('Could not determine upserted identifier');
