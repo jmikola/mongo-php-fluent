@@ -18,9 +18,6 @@ class CommandUpdateBatchTest extends AbstractUpdateBatchTest
      */
     protected function getBatch(array $writeOptions = array())
     {
-        $db = $this->getMongoDB();
-        $collection = $this->getMongoCollection();
-
-        return new CommandUpdateBatch($collection, $writeOptions);
+        return new CommandUpdateBatch($this->getMongoCollection(), $writeOptions);
     }
 }

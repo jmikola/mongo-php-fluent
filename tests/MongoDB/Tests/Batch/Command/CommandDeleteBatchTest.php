@@ -18,9 +18,6 @@ class CommandDeleteBatchTest extends AbstractDeleteBatchTest
      */
     protected function getBatch(array $writeOptions = array())
     {
-        $db = $this->getMongoDB();
-        $collection = $this->getMongoCollection();
-
-        return new CommandDeleteBatch($collection, $writeOptions);
+        return new CommandDeleteBatch($this->getMongoCollection(), $writeOptions);
     }
 }

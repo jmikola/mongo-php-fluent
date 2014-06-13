@@ -18,9 +18,6 @@ class LegacyDeleteBatchTest extends AbstractDeleteBatchTest
      */
     protected function getBatch(array $writeOptions = array())
     {
-        $db = $this->getMongoDB();
-        $collection = $this->getMongoCollection();
-
-        return new LegacyDeleteBatch($db, $collection, $writeOptions);
+        return new LegacyDeleteBatch($this->getMongoDB(), $this->getMongoCollection(), $writeOptions);
     }
 }

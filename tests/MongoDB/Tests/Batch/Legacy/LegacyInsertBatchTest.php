@@ -18,9 +18,6 @@ class LegacyInsertBatchTest extends AbstractInsertBatchTest
      */
     protected function getBatch(array $writeOptions = array())
     {
-        $db = $this->getMongoDB();
-        $collection = $this->getMongoCollection();
-
-        return new LegacyInsertBatch($db, $collection, $writeOptions);
+        return new LegacyInsertBatch($this->getMongoDB(), $this->getMongoCollection(), $writeOptions);
     }
 }

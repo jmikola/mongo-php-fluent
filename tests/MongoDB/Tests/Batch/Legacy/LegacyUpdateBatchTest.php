@@ -18,9 +18,6 @@ class LegacyUpdateBatchTest extends AbstractUpdateBatchTest
      */
     protected function getBatch(array $writeOptions = array())
     {
-        $db = $this->getMongoDB();
-        $collection = $this->getMongoCollection();
-
-        return new LegacyUpdateBatch($db, $collection, $writeOptions);
+        return new LegacyUpdateBatch($this->getMongoDB(), $this->getMongoCollection(), $writeOptions);
     }
 }
