@@ -32,6 +32,10 @@ final class LegacyDeleteBatch extends LegacyWriteBatch
             throw new MongoException('Expected $document to contain \'limit\' key');
         }
 
+        if ($document['limit'] != 0 && $document['limit'] != 1) {
+            throw new MongoException(sprintf('Excepted \'limit\' to be 0 or 1; given: %d', $document['limit']));
+        }
+
         $document['q'] = (array) $document['q'];
         $document['limit'] = (integer) $document['limit'];
 

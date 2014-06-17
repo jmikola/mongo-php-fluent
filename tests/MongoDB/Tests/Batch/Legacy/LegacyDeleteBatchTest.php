@@ -14,6 +14,16 @@ class LegacyDeleteBatchTest extends AbstractDeleteBatchTest
     }
 
     /**
+     * @expectedException MongoException
+     * @expectedExceptionMessage Excepted 'limit' to be 0 or 1; given: 2
+     */
+    public function testAddShouldThrowExceptionForInvalidLimit()
+    {
+        $batch = $this->getBatch();
+        $batch->add(array('q' => array('_id' => 1), 'limit' => 2));
+    }
+
+    /**
      * @see AbstractDeleteBatchTest::getBatch()
      */
     protected function getBatch(array $writeOptions = array())
