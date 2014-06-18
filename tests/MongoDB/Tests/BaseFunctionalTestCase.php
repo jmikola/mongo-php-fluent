@@ -4,7 +4,7 @@ namespace MongoDB\Tests;
 
 use MongoClient;
 
-class BaseFunctionalTestCase extends BaseTestCase
+abstract class BaseFunctionalTestCase extends BaseTestCase
 {
     const CONN_STANDALONE = 0x01;
     const CONN_PRIMARY = 0x02;
@@ -28,6 +28,14 @@ class BaseFunctionalTestCase extends BaseTestCase
         self::$client = new MongoClient($uri);
     }
 
+    protected function assertCollectionContains(array $expectedDocuments)
+    {
+        $collection = $this->getMongoCollection();
+        $documents = iterator_to_array($collection->find(), false);
+
+        $this->assertSame($expectedDocuments, $documents);
+    }
+
     protected function getMongoClient()
     {
         return self::$client;
@@ -43,10 +51,26 @@ class BaseFunctionalTestCase extends BaseTestCase
         return $this->getMongoClient()->selectDB($this->getDatabase());
     }
 
+    protected function loadIntoCollection(array $documents)
+    {
+        $collection = $this->getMongoCollection();
+
+        foreach ($documents as $document) {
+            $collection->insert($document);
+        }
+    }
+
     protected function requiresLegacyWriteOperations()
     {
         if ($this->isWriteApiSupported()) {
             $this->markTestSkipped('Legacy write operations are not available.');
+        }
+    }
+
+    protected function requiresReplicaSet()
+    {
+        if ( ! $this->isReplicaSet()) {
+            $this->markTestSkipped('Replica set is not available.');
         }
     }
 
@@ -55,6 +79,13 @@ class BaseFunctionalTestCase extends BaseTestCase
         if ( ! $this->isWriteApiSupported()) {
             $this->markTestSkipped('Write commands are not available.');
         }
+    }
+
+    private function isReplicaSet()
+    {
+        $result = $this->getMongoClient()->admin->command(array('replSetGetStatus' => 1));
+
+        return (boolean) $result['ok'];
     }
 
     /**

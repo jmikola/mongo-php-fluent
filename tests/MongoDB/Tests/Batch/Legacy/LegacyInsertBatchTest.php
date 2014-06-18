@@ -3,6 +3,7 @@
 namespace MongoDB\Tests\Batch\Legacy;
 
 use MongoDB\Batch\Legacy\LegacyInsertBatch;
+use MongoDB\Tests\Batch\AbstractBatchTest;
 use MongoDB\Tests\Batch\AbstractInsertBatchTest;
 
 class LegacyInsertBatchTest extends AbstractInsertBatchTest
@@ -14,7 +15,7 @@ class LegacyInsertBatchTest extends AbstractInsertBatchTest
     }
 
     /**
-     * @see AbstractInsertBatchTest::getBatch()
+     * @see AbstractBatchTest::getBatch()
      */
     protected function getBatch(array $writeOptions = array())
     {

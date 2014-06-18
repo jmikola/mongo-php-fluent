@@ -3,6 +3,7 @@
 namespace MongoDB\Tests\Batch\Command;
 
 use MongoDB\Batch\Command\CommandInsertBatch;
+use MongoDB\Tests\Batch\AbstractBatchTest;
 use MongoDB\Tests\Batch\AbstractInsertBatchTest;
 
 class CommandInsertBatchTest extends AbstractInsertBatchTest
@@ -14,7 +15,7 @@ class CommandInsertBatchTest extends AbstractInsertBatchTest
     }
 
     /**
-     * @see AbstractInsertBatchTest::getBatch()
+     * @see AbstractBatchTest::getBatch()
      */
     protected function getBatch(array $writeOptions = array())
     {

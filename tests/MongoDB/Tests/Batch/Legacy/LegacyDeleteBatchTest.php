@@ -3,6 +3,7 @@
 namespace MongoDB\Tests\Batch\Legacy;
 
 use MongoDB\Batch\Legacy\LegacyDeleteBatch;
+use MongoDB\Tests\Batch\AbstractBatchTest;
 use MongoDB\Tests\Batch\AbstractDeleteBatchTest;
 
 class LegacyDeleteBatchTest extends AbstractDeleteBatchTest
@@ -24,7 +25,7 @@ class LegacyDeleteBatchTest extends AbstractDeleteBatchTest
     }
 
     /**
-     * @see AbstractDeleteBatchTest::getBatch()
+     * @see AbstractBatchTest::getBatch()
      */
     protected function getBatch(array $writeOptions = array())
     {

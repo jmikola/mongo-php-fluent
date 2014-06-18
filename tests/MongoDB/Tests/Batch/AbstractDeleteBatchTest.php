@@ -3,10 +3,137 @@
 namespace MongoDB\Tests\Batch;
 
 use MongoDB\Batch\BatchInterface;
-use MongoDB\Tests\BaseFunctionalTestCase;
 
-abstract class AbstractDeleteBatchTest extends BaseFunctionalTestCase
+abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 {
+    public function testWriteConcernError()
+    {
+        $this->requiresReplicaSet();
+
+        $this->loadIntoCollection(array(
+            array('_id' => 1, 'x' => 1),
+            array('_id' => 2, 'x' => 2),
+        ));
+
+        $batch = $this->getBatch(array('w' => 99, 'wTimeoutMS' => 1));
+        $batch->add(array('q' => array('x' => 1), 'limit' => 1));
+        $batch->add(array('q' => array('x' => 2), 'limit' => 1));
+        $result = $this->executeBatch($batch);
+
+        $this->assertSame(2, $result['nRemoved']);
+        $this->assertNumWriteErrors(0, $result);
+        $this->assertNumWriteConcernErrors(1, $result);
+        $this->assertCollectionContains(array());
+    }
+
+    public function testWriteErrorWithOrderedBatch()
+    {
+        $this->loadIntoCollection(array(
+            array('_id' => 1, 'x' => 1),
+            array('_id' => 2, 'x' => 2),
+        ));
+
+        $batch = $this->getBatch(array('ordered' => true));
+        $batch->add(array('q' => array('x' => 1), 'limit' => 1));
+        $batch->add(array('q' => array('$where' => '3rr0r'), 'limit' => 1));
+        $batch->add(array('q' => array('$where' => '3rr0r'), 'limit' => 1));
+        $batch->add(array('q' => array('x' => 2), 'limit' => 1));
+        $result = $this->executeBatch($batch);
+
+        $this->assertSame(1, $result['nRemoved']);
+        $this->assertNumWriteErrors(1, $result);
+        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertCollectionContains(array(
+            array('_id' => 2, 'x' => 2),
+        ));
+    }
+
+    public function testWriteErrorWithUnorderedBatch()
+    {
+        $this->loadIntoCollection(array(
+            array('_id' => 1, 'x' => 1),
+            array('_id' => 2, 'x' => 2),
+        ));
+
+        $batch = $this->getBatch(array('ordered' => false));
+        $batch->add(array('q' => array('x' => 1), 'limit' => 1));
+        $batch->add(array('q' => array('$where' => '3rr0r'), 'limit' => 1));
+        $batch->add(array('q' => array('$where' => '3rr0r'), 'limit' => 1));
+        $batch->add(array('q' => array('x' => 2), 'limit' => 1));
+        $result = $this->executeBatch($batch);
+
+        $this->assertSame(2, $result['nRemoved']);
+        $this->assertNumWriteErrors(2, $result);
+        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertCollectionContains(array());
+    }
+
+    public function testSingleDeleteOperationWithLimit()
+    {
+        $this->loadIntoCollection(array(
+            array('_id' => 1, 'x' => 1),
+            array('_id' => 2, 'x' => 1),
+            array('_id' => 3, 'x' => 1),
+        ));
+
+        $batch = $this->getBatch();
+        $batch->add(array('q' => array('x' => 1), 'limit' => 1));
+        $result = $this->executeBatch($batch);
+
+        $this->assertSame(1, $result['nRemoved']);
+        $this->assertNumWriteErrors(0, $result);
+        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertCollectionContains(array(
+            array('_id' => 2, 'x' => 1),
+            array('_id' => 3, 'x' => 1),
+        ));
+    }
+
+    public function testSingleDeleteOperationWithoutLimit()
+    {
+        $this->loadIntoCollection(array(
+            array('_id' => 1, 'x' => 1),
+            array('_id' => 2, 'x' => 1),
+            array('_id' => 3, 'x' => 1),
+            array('_id' => 4, 'x' => 2),
+        ));
+
+        $batch = $this->getBatch();
+        $batch->add(array('q' => array('x' => 1), 'limit' => 0));
+        $result = $this->executeBatch($batch);
+
+        $this->assertSame(3, $result['nRemoved']);
+        $this->assertNumWriteErrors(0, $result);
+        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertCollectionContains(array(
+            array('_id' => 4, 'x' => 2),
+        ));
+    }
+
+    public function testMultipleDeleteOperations()
+    {
+        $this->loadIntoCollection(array(
+            array('_id' => 1, 'x' => 1),
+            array('_id' => 2, 'x' => 1),
+            array('_id' => 3, 'x' => 2),
+            array('_id' => 4, 'x' => 2),
+            array('_id' => 5, 'x' => 3),
+        ));
+
+        $batch = $this->getBatch();
+        $batch->add(array('q' => array('x' => 1), 'limit' => 0));
+        $batch->add(array('q' => array('x' => 2), 'limit' => 1));
+        $result = $this->executeBatch($batch);
+
+        $this->assertSame(3, $result['nRemoved']);
+        $this->assertNumWriteErrors(0, $result);
+        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertCollectionContains(array(
+            array('_id' => 4, 'x' => 2),
+            array('_id' => 5, 'x' => 3),
+        ));
+    }
+
     public function testGetItemCount()
     {
         $batch = $this->getBatch();
@@ -31,6 +158,4 @@ abstract class AbstractDeleteBatchTest extends BaseFunctionalTestCase
 
         $this->assertSame(BatchInterface::OP_DELETE, $batch->getType());
     }
-
-    abstract protected function getBatch(array $writeOptions = array());
 }
