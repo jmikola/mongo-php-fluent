@@ -22,7 +22,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(2, $result['nRemoved']);
         $this->assertNumWriteErrors(0, $result);
-        $this->assertNumWriteConcernErrors(1, $result);
+        $this->assertHasWriteConcernError($result);
         $this->assertCollectionContains(array());
     }
 
@@ -42,7 +42,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(1, $result['nRemoved']);
         $this->assertNumWriteErrors(1, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 2, 'x' => 2),
         ));
@@ -64,7 +64,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(2, $result['nRemoved']);
         $this->assertNumWriteErrors(2, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array());
     }
 
@@ -82,7 +82,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(1, $result['nRemoved']);
         $this->assertNumWriteErrors(0, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 2, 'x' => 1),
             array('_id' => 3, 'x' => 1),
@@ -104,7 +104,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(3, $result['nRemoved']);
         $this->assertNumWriteErrors(0, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 4, 'x' => 2),
         ));
@@ -127,7 +127,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(3, $result['nRemoved']);
         $this->assertNumWriteErrors(0, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 4, 'x' => 2),
             array('_id' => 5, 'x' => 3),

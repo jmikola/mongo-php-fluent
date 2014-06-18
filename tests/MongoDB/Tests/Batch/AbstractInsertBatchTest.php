@@ -17,7 +17,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(2, $result['nInserted']);
         $this->assertNumWriteErrors(0, $result);
-        $this->assertNumWriteConcernErrors(1, $result);
+        $this->assertHasWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 1, 'x' => 1),
             array('_id' => 2, 'x' => 2),
@@ -34,7 +34,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(1, $result['nInserted']);
         $this->assertNumWriteErrors(1, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 1, 'x' => 1),
         ));
@@ -51,7 +51,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(2, $result['nInserted']);
         $this->assertNumWriteErrors(2, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 1, 'x' => 1),
             array('_id' => 2, 'x' => 3),
@@ -66,7 +66,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(1, $result['nInserted']);
         $this->assertNumWriteErrors(0, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 1, 'x' => 1),
         ));
@@ -82,7 +82,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
 
         $this->assertSame(3, $result['nInserted']);
         $this->assertNumWriteErrors(0, $result);
-        $this->assertNumWriteConcernErrors(0, $result);
+        $this->assertDoesNotHaveWriteConcernError($result);
         $this->assertCollectionContains(array(
             array('_id' => 1, 'x' => 1),
             array('_id' => 2, 'x' => 2),

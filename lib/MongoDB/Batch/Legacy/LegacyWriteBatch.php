@@ -65,7 +65,7 @@ abstract class LegacyWriteBatch implements BatchInterface
         }
 
         if (isset($err) && $err['wcError'] !== null) {
-            $result['writeConcernErrors'][] = $err['wcError'];
+            $result['writeConcernError'] = $err['wcError'];
         }
 
         return $result;
@@ -89,6 +89,11 @@ abstract class LegacyWriteBatch implements BatchInterface
     final protected function applyWriteConcern(array $writeOptions)
     {
         unset($writeOptions['ordered']);
+
+        if (isset($writeOptions['wTimeoutMS'])) {
+            $writeOptions['wtimeout'] = $writeOptions['wTimeoutMS'];
+            unset($writeOptions['wTimeoutMS']);
+        }
 
         $this->db->command(array('resetError' => 1));
         $gle = $this->db->command(array('getlasterror' => 1) + $writeOptions);
