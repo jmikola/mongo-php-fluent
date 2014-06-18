@@ -100,7 +100,7 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
         }
 
         if ( ! empty($gle['n'])) {
-            $result['nMatched'] += (integer) $gle['n'] - (empty($gle['updatedExisting']) ? 0 : 1);
+            $result['nMatched'] += (integer) $gle['n'];
         }
     }
 
