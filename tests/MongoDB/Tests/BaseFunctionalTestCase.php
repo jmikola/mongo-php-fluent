@@ -74,6 +74,20 @@ abstract class BaseFunctionalTestCase extends BaseTestCase
         }
     }
 
+    protected function requiresShardCluster()
+    {
+        if ( ! $this->isShardCluster()) {
+            $this->markTestSkipped('Shard cluster is not available.');
+        }
+    }
+
+    protected function requiresStandalone()
+    {
+        if ($this->isReplicaSet() || $this->isShardCluster()) {
+            $this->markTestSkipped('Standalone is not available.');
+        }
+    }
+
     protected function requiresWriteCommands()
     {
         if ( ! $this->isWriteApiSupported()) {
@@ -81,11 +95,44 @@ abstract class BaseFunctionalTestCase extends BaseTestCase
         }
     }
 
+    /**
+     * Checks if the client is connected to a replica set primary.
+     *
+     * @return boolean
+     */
     private function isReplicaSet()
     {
-        $result = $this->getMongoClient()->admin->command(array('replSetGetStatus' => 1));
+        $client = $this->getMongoClient();
 
-        return (boolean) $result['ok'];
+        foreach ($client->getConnections() as $connection) {
+            $connection = $connection['connection'];
+
+            if ($connection['connection_type'] & self::CONN_PRIMARY) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if the client is connected to a mongos instance.
+     *
+     * @return boolean
+     */
+    private function isShardCluster()
+    {
+        $client = $this->getMongoClient();
+
+        foreach ($client->getConnections() as $connection) {
+            $connection = $connection['connection'];
+
+            if ($connection['connection_type'] & self::CONN_MONGOS) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
