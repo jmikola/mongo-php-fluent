@@ -35,6 +35,6 @@ class OrderedBulkFunctionalTest extends BaseFunctionalTestCase
 
     private function getOrderedBulk()
     {
-        return new OrderedBulk($this->getMongoClient(), $this->getMongoDB(), $this->getMongoCollection());
+        return new OrderedBulk($this->getMongoDB(), $this->getMongoCollection());
     }
 }

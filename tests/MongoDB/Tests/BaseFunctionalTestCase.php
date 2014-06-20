@@ -6,12 +6,6 @@ use MongoClient;
 
 abstract class BaseFunctionalTestCase extends BaseTestCase
 {
-    const CONN_STANDALONE = 0x01;
-    const CONN_PRIMARY = 0x02;
-    const CONN_SECONDARY = 0x04;
-    const CONN_ARBITER = 0x08;
-    const CONN_MONGOS = 0x10;
-
     const PHP_MONGO_API_WRITE_API = 2;
 
     protected static $client;
@@ -102,17 +96,9 @@ abstract class BaseFunctionalTestCase extends BaseTestCase
      */
     private function isReplicaSet()
     {
-        $client = $this->getMongoClient();
+        $isMaster = $this->getMongoDB()->command(array('isMaster' => 1));
 
-        foreach ($client->getConnections() as $connection) {
-            $connection = $connection['connection'];
-
-            if ($connection['connection_type'] & self::CONN_PRIMARY) {
-                return true;
-            }
-        }
-
-        return false;
+        return ( ! empty($isMaster['setName']));
     }
 
     /**
@@ -122,17 +108,9 @@ abstract class BaseFunctionalTestCase extends BaseTestCase
      */
     private function isShardCluster()
     {
-        $client = $this->getMongoClient();
+        $isMaster = $this->getMongoDB()->command(array('isMaster' => 1));
 
-        foreach ($client->getConnections() as $connection) {
-            $connection = $connection['connection'];
-
-            if ($connection['connection_type'] & self::CONN_MONGOS) {
-                return true;
-            }
-        }
-
-        return false;
+        return (isset($isMaster['msg']) && $isMaster['msg'] === 'isdbgrid');
     }
 
     /**
@@ -142,23 +120,10 @@ abstract class BaseFunctionalTestCase extends BaseTestCase
      */
     private function isWriteApiSupported()
     {
-        $client = $this->getMongoClient();
-        $writable = (self::CONN_STANDALONE | self::CONN_PRIMARY | self::CONN_MONGOS);
+        $isMaster = $this->getMongoDB()->command(array('isMaster' => 1));
 
-        foreach ($client->getConnections() as $connection) {
-            $connection = $connection['connection'];
-
-            if ( ! ($connection['connection_type'] & $writable)) {
-                continue;
-            }
-
-            if ($connection['min_wire_version'] > self::PHP_MONGO_API_WRITE_API) {
-                continue;
-            }
-
-            if ($connection['max_wire_version'] < self::PHP_MONGO_API_WRITE_API) {
-                continue;
-            }
+        if (isset($isMaster['minWireVersion']) && $isMaster['minWireVersion'] <= self::PHP_MONGO_API_WRITE_API &&
+            isset($isMaster['maxWireVersion']) && $isMaster['maxWireVersion'] >= self::PHP_MONGO_API_WRITE_API) {
 
             return true;
         }

@@ -36,6 +36,6 @@ class UnorderedGeneratorTest extends AbstractGeneratorTest
      */
     protected function getGenerator(array $operations = array(), array $writeOptions = array())
     {
-        return new UnorderedGenerator(new MongoClient(), $this->getMockMongoDB(), $this->getMockMongoCollection(), $operations, $writeOptions);
+        return new UnorderedGenerator($this->getMockMongoDB(), $this->getMockMongoCollection(), $operations, $writeOptions);
     }
 }

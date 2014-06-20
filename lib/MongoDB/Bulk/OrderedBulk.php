@@ -28,7 +28,6 @@ final class OrderedBulk extends AbstractBulk
     protected function getMappedBatches(array $writeConcern = array())
     {
         return new OrderedGenerator(
-            $this->client,
             $this->db,
             $this->collection,
             $this->getOperations(),

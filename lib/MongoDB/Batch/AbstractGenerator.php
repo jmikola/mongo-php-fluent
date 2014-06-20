@@ -10,23 +10,16 @@ use MongoDB\Batch\Legacy\LegacyInsertBatch;
 use MongoDB\Batch\Legacy\LegacyUpdateBatch;
 use InvalidArgumentException;
 use Iterator;
-use MongoClient;
 use MongoCollection;
 use MongoDB;
 
 abstract class AbstractGenerator implements Iterator
 {
-    const CONN_STANDALONE = 0x01;
-    const CONN_PRIMARY = 0x02;
-    const CONN_SECONDARY = 0x04;
-    const CONN_ARBITER = 0x08;
-    const CONN_MONGOS = 0x10;
-
     const PHP_MONGO_API_WRITE_API = 2;
 
-    private $client;
     private $collection;
     private $db;
+    private $isWriteApiSupported;
     private $writeOptions;
 
     protected $operations;
@@ -36,15 +29,13 @@ abstract class AbstractGenerator implements Iterator
     /**
      * Constructor.
      *
-     * @param MongoClient     $client       MongoClient instance
      * @param MongoDB         $db           MongoDB instance
      * @param MongoCollection $collection   MongoCollection instance
      * @param array           $operations   Operation type/document tuples
      * @param array           $writeOptions Write concern and ordered options
      */
-    public function __construct(MongoClient $client, MongoDB $db, MongoCollection $collection, array $operations, array $writeOptions)
+    public function __construct(MongoDB $db, MongoCollection $collection, array $operations, array $writeOptions)
     {
-        $this->client = $client;
         $this->db = $db;
         $this->collection = $collection;
         $this->operations = $operations;
@@ -114,7 +105,7 @@ abstract class AbstractGenerator implements Iterator
      * Create a BatchInterface instance for the operation type.
      *
      * The batch implementation returned will depend on whether or not the
-     * client connection supports write commands.
+     * connection supports write commands.
      *
      * @param integer $type
      * @return BatchInterface
@@ -155,26 +146,20 @@ abstract class AbstractGenerator implements Iterator
      */
     private function isWriteApiSupported()
     {
-        $writable = (self::CONN_STANDALONE | self::CONN_PRIMARY | self::CONN_MONGOS);
-
-        foreach ($this->client->getConnections() as $connection) {
-            $connection = $connection['connection'];
-
-            if ( ! ($connection['connection_type'] & $writable)) {
-                continue;
-            }
-
-            if ($connection['min_wire_version'] > self::PHP_MONGO_API_WRITE_API) {
-                continue;
-            }
-
-            if ($connection['max_wire_version'] < self::PHP_MONGO_API_WRITE_API) {
-                continue;
-            }
-
-            return true;
+        if (isset($this->isWriteApiSupported)) {
+            return $this->isWriteApiSupported;
         }
 
-        return false;
+        $this->isWriteApiSupported = false;
+
+        $isMaster = $this->db->command(array('isMaster' => 1));
+
+        if (isset($isMaster['minWireVersion']) && $isMaster['minWireVersion'] <= self::PHP_MONGO_API_WRITE_API &&
+            isset($isMaster['maxWireVersion']) && $isMaster['maxWireVersion'] >= self::PHP_MONGO_API_WRITE_API) {
+
+            $this->isWriteApiSupported = true;
+        }
+
+        return $this->isWriteApiSupported;
     }
 }

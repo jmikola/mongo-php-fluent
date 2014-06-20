@@ -28,7 +28,6 @@ final class UnorderedBulk extends AbstractBulk
     protected function getMappedBatches(array $writeConcern = array())
     {
         return new UnorderedGenerator(
-            $this->client,
             $this->db,
             $this->collection,
             $this->getOperations(),

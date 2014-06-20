@@ -39,6 +39,6 @@ class OrderedGeneratorTest extends AbstractGeneratorTest
      */
     protected function getGenerator(array $operations = array(), array $writeOptions = array())
     {
-        return new OrderedGenerator(new MongoClient(), $this->getMockMongoDB(), $this->getMockMongoCollection(), $operations, $writeOptions);
+        return new OrderedGenerator($this->getMockMongoDB(), $this->getMockMongoCollection(), $operations, $writeOptions);
     }
 }
