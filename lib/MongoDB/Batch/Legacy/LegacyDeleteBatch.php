@@ -58,25 +58,33 @@ final class LegacyDeleteBatch extends LegacyWriteBatch
         return array(
             'nRemoved' => 0,
             'writeErrors' => array(),
-            'writeConcernErrors' => array(),
+            'writeConcernError' => null,
         );
     }
 
     /**
      * @see LegacyWriteBatch::executeSingleOperation()
      */
-    protected function executeSingleOperation($batchIndex, $document, array &$result)
+    protected function executeSingleOperation($batchIndex, $document, array $writeConcern, array &$result)
     {
         try {
-            $gle = $this->collection->remove($document['q'], array(
-                'w' => 1,
-                'justOne' => ($document['limit'] === 1),
-            ));
+            $gle = $this->collection->remove(
+                $document['q'],
+                array('justOne' => ($document['limit'] === 1)) + $writeConcern
+            );
         } catch (MongoCursorException $e) {
             $gle = $this->db->command(array('getlasterror' => 1));
         }
 
+        if ( ! is_array($gle)) {
+            return;
+        }
+
         $err = $this->parseGetLastErrorResponse($gle);
+
+        if ($err['writeConcernError'] !== null && ! isset($result['writeConcernError'])) {
+            $result['writeConcernError'] = $err['writeConcernError'];
+        }
 
         if ($err['writeError'] !== null) {
             $result['writeErrors'][] = array(
@@ -85,6 +93,8 @@ final class LegacyDeleteBatch extends LegacyWriteBatch
                 'errmsg' => $err['writeError']['errmsg'],
                 'op' => $document,
             );
+
+            return;
         }
 
         if ( ! empty($gle['n'])) {

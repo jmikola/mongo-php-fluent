@@ -59,26 +59,34 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
             'nModified' => null,
             'nUpserted' => 0,
             'writeErrors' => array(),
-            'writeConcernErrors' => array(),
+            'writeConcernError' => null,
         );
     }
 
     /**
      * @see LegacyWriteBatch::executeSingleOperation()
      */
-    protected function executeSingleOperation($batchIndex, $document, array &$result)
+    protected function executeSingleOperation($batchIndex, $document, array $writeConcern, array &$result)
     {
         try {
-            $gle = $this->collection->update($document['q'], $document['u'], array(
-                'w' => 1,
-                'upsert' => $document['upsert'],
-                'multiple' => $document['multi'],
-            ));
+            $gle = $this->collection->update(
+                $document['q'],
+                $document['u'],
+                array('upsert' => $document['upsert'], 'multiple' => $document['multi']) + $writeConcern
+            );
         } catch (MongoCursorException $e) {
             $gle = $this->db->command(array('getlasterror' => 1));
         }
 
+        if ( ! is_array($gle)) {
+            return;
+        }
+
         $err = $this->parseGetLastErrorResponse($gle);
+
+        if ($err['writeConcernError'] !== null && ! isset($result['writeConcernError'])) {
+            $result['writeConcernError'] = $err['writeConcernError'];
+        }
 
         if ($err['writeError'] !== null) {
             $result['writeErrors'][] = array(
@@ -87,10 +95,12 @@ final class LegacyUpdateBatch extends LegacyWriteBatch
                 'errmsg' => $err['writeError']['errmsg'],
                 'op' => $document,
             );
+
+            return;
         }
 
         if ($document['upsert'] && empty($gle['updatedExisting'])) {
-            $result['nUpserted'] += 1;
+            $result['nUpserted'] += (integer) $gle['n'];;
             $result['upserted'][] = array(
                 'index' => $batchIndex,
                 '_id' => $this->getUpsertedId($document, $gle),

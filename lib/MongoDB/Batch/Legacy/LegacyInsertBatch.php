@@ -37,22 +37,30 @@ final class LegacyInsertBatch extends LegacyWriteBatch
         return array(
             'nInserted' => 0,
             'writeErrors' => array(),
-            'writeConcernErrors' => array(),
+            'writeConcernError' => null,
         );
     }
 
     /**
      * @see LegacyWriteBatch::executeSingleOperation()
      */
-    protected function executeSingleOperation($batchIndex, $document, array &$result)
+    protected function executeSingleOperation($batchIndex, $document, array $writeConcern, array &$result)
     {
         try {
-            $gle = $this->collection->insert($document, array('w' => 1));
+            $gle = $this->collection->insert($document, $writeConcern);
         } catch (MongoCursorException $e) {
             $gle = $this->db->command(array('getlasterror' => 1));
         }
 
+        if ( ! is_array($gle)) {
+            return;
+        }
+
         $err = $this->parseGetLastErrorResponse($gle);
+
+        if ($err['writeConcernError'] !== null && ! isset($result['writeConcernError'])) {
+            $result['writeConcernError'] = $err['writeConcernError'];
+        }
 
         if ($err['writeError'] !== null) {
             $result['writeErrors'][] = array(

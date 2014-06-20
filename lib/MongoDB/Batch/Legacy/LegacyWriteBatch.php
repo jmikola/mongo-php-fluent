@@ -48,24 +48,17 @@ abstract class LegacyWriteBatch implements BatchInterface
         }
 
         $result = $this->createEmptyResult();
-        $writeOptions = array_merge($this->writeOptions, $writeOptions);
+
+        $writeConcern = array_merge($this->writeOptions, $writeOptions);
+        $ordered = (boolean) $writeConcern['ordered'];
+        unset($writeConcern['ordered']);
 
         foreach ($this->documents as $batchIndex => $document) {
-            if ($writeOptions['ordered'] && ! empty($result['writeErrors'])) {
+            if ($ordered && ! empty($result['writeErrors'])) {
                 break;
             }
 
-            $this->executeSingleOperation($batchIndex, $document, $result);
-        }
-
-        if (empty($result['writeErrors']) ||
-            ( ! $writeOptions['ordered'] && count($result['writeErrors']) < count($this->documents))) {
-
-            $err = $this->applyWriteConcern($writeOptions);
-        }
-
-        if (isset($err) && $err['wcError'] !== null) {
-            $result['writeConcernError'] = $err['wcError'];
+            $this->executeSingleOperation($batchIndex, $document, $writeConcern, $result);
         }
 
         return $result;
@@ -77,28 +70,6 @@ abstract class LegacyWriteBatch implements BatchInterface
     final public function getItemCount()
     {
         return count($this->documents);
-    }
-
-    /**
-     * Applies a write concern and returns the equivalent write command response
-     * document.
-     *
-     * @param array $writeOptions
-     * @return array
-     */
-    final protected function applyWriteConcern(array $writeOptions)
-    {
-        unset($writeOptions['ordered']);
-
-        if (isset($writeOptions['wTimeoutMS'])) {
-            $writeOptions['wtimeout'] = $writeOptions['wTimeoutMS'];
-            unset($writeOptions['wTimeoutMS']);
-        }
-
-        $this->db->command(array('resetError' => 1));
-        $gle = $this->db->command(array('getlasterror' => 1) + $writeOptions);
-
-        return $this->parseGetLastErrorResponse($gle);
     }
 
     /**
@@ -124,12 +95,12 @@ abstract class LegacyWriteBatch implements BatchInterface
 
         $extractedError = array(
             'writeError' => null,
-            'wcError' => null
+            'writeConcernError' => null
         );
 
         if ($err === 'norepl' || $err === 'noreplset') {
             // Know this is legacy gle and the repl not enforced - write concern error in 2.4
-            $extractedError['wcError'] = array(
+            $extractedError['writeConcernError'] = array(
                 'code' => self::ERR_WRITE_CONCERN_FAILED,
                 'errmsg' => $errMsg ?: $wNote ?: $err,
             );
@@ -139,7 +110,7 @@ abstract class LegacyWriteBatch implements BatchInterface
 
         if ($timeout) {
             // Know there was not write error
-            $extractedError['wcError'] = array(
+            $extractedError['writeConcernError'] = array(
                 'code' => self::ERR_WRITE_CONCERN_FAILED,
                 'errmsg' => $errMsg ?: $err,
                 'errInfo' => array('wtimeout' => true),
@@ -155,7 +126,7 @@ abstract class LegacyWriteBatch implements BatchInterface
             $code === self::ERR_UNKNOWN_REPL_WRITE_CONCERN ||
             $code === self::ERR_WRITE_CONCERN_FAILED) {
 
-            $extractedError['wcError'] = array(
+            $extractedError['writeConcernError'] = array(
                 'code' => $code,
                 'errmsg' => $errMsg,
             );
@@ -198,9 +169,10 @@ abstract class LegacyWriteBatch implements BatchInterface
     /**
      * Execute a single write operation.
      *
-     * @param integer      $batchIndex Batch index of the write operation
-     * @param array|object $document   Write operation
-     * @param array        $result     Batch execution result (will be modified)
+     * @param integer      $batchIndex   Batch index of the write operation
+     * @param array|object $document     Write operation
+     * @param array        $writeConcern Write concern
+     * @param array        $result       Batch execution result (will be modified)
      */
-    abstract protected function executeSingleOperation($batchIndex, $document, array &$result);
+    abstract protected function executeSingleOperation($batchIndex, $document, array $writeConcern, array &$result);
 }
