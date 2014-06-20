@@ -15,6 +15,18 @@ class CommandDeleteBatchTest extends AbstractDeleteBatchTest
     }
 
     /**
+     * @expectedException MongoWriteConcernException
+     */
+    public function testCommandFailsIfWriteConcernUsedWithStandalone()
+    {
+        $this->requiresStandalone();
+
+        $batch = $this->getBatch(array('w' => 2));
+        $batch->add(array('q' => array(), 'limit' => 1));
+        $result = $batch->execute();
+    }
+
+    /**
      * @see AbstractBatchTest::getBatch()
      */
     protected function getBatch(array $writeOptions = array())

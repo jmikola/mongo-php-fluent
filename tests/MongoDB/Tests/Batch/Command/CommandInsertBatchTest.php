@@ -15,6 +15,18 @@ class CommandInsertBatchTest extends AbstractInsertBatchTest
     }
 
     /**
+     * @expectedException MongoWriteConcernException
+     */
+    public function testCommandFailsIfWriteConcernUsedWithStandalone()
+    {
+        $this->requiresStandalone();
+
+        $batch = $this->getBatch(array('w' => 2));
+        $batch->add(array('_id' => 1));
+        $result = $batch->execute();
+    }
+
+    /**
      * @see AbstractBatchTest::getBatch()
      */
     protected function getBatch(array $writeOptions = array())

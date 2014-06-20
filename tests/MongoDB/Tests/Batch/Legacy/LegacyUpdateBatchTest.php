@@ -25,7 +25,7 @@ class LegacyUpdateBatchTest extends AbstractUpdateBatchTest
             'u' => array('$set' => array('x' => 1)),
             'upsert' => true,
         ));
-        $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nUpserted']);
         $this->assertUpsertedIdForIndex(1, 0, $result);
@@ -45,7 +45,7 @@ class LegacyUpdateBatchTest extends AbstractUpdateBatchTest
             'u' => array('_id' => 2),
             'upsert' => true,
         ));
-        $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nUpserted']);
         $this->assertUpsertedIdForIndex(2, 0, $result);
@@ -65,7 +65,7 @@ class LegacyUpdateBatchTest extends AbstractUpdateBatchTest
             'u' => array('_id' => 3),
             'upsert' => true,
         ));
-        $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nUpserted']);
         $this->assertUpsertedIdForIndex(3, 0, $result);

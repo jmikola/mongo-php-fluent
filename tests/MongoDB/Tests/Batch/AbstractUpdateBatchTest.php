@@ -19,7 +19,7 @@ abstract class AbstractUpdateBatchTest extends AbstractBatchFunctionalTest
         $batch = $this->getBatch(array('w' => 99, 'wTimeoutMS' => 1));
         $batch->add(array('q' => array('_id' => 1), 'u' => array('x' => 3)));
         $batch->add(array('q' => array('_id' => 2), 'u' => array('x' => 3)));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(2, $result['nMatched']);
         $this->assertNumModified(2, $result);
@@ -45,7 +45,7 @@ abstract class AbstractUpdateBatchTest extends AbstractBatchFunctionalTest
         $batch->add(array('q' => array('_id' => 1), 'u' => array('x' => 3)));
         $batch->add(array('q' => array('$where' => '3rr0r'), 'u' => array('x' => 4)));
         $batch->add(array('q' => array('_id' => 2), 'u' => array('x' => 3)));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nMatched']);
         $this->assertNumModified(1, $result);
@@ -71,7 +71,7 @@ abstract class AbstractUpdateBatchTest extends AbstractBatchFunctionalTest
         $batch->add(array('q' => array('_id' => 1), 'u' => array('x' => 3)));
         $batch->add(array('q' => array('$where' => '3rr0r'), 'u' => array('x' => 4)));
         $batch->add(array('q' => array('_id' => 2), 'u' => array('x' => 3)));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(2, $result['nMatched']);
         $this->assertNumModified(2, $result);
@@ -95,7 +95,7 @@ abstract class AbstractUpdateBatchTest extends AbstractBatchFunctionalTest
 
         $batch = $this->getBatch();
         $batch->add(array('q' => array('x' => 3), 'u' => array('$set' => array('x' => 1))));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nMatched']);
         $this->assertNumModified(1, $result);
@@ -119,7 +119,7 @@ abstract class AbstractUpdateBatchTest extends AbstractBatchFunctionalTest
 
         $batch = $this->getBatch();
         $batch->add(array('q' => array('x' => 3), 'u' => array('$set' => array('y' => 1)), 'multi' => true));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(3, $result['nMatched']);
         $this->assertNumModified(2, $result);
@@ -141,7 +141,7 @@ abstract class AbstractUpdateBatchTest extends AbstractBatchFunctionalTest
 
         $batch = $this->getBatch();
         $batch->add(array('q' => array('_id' => 1), 'u' => array('$set' => array('x' => 1)), 'upsert' => true));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nMatched']);
         $this->assertNumModified(1, $result);
@@ -157,7 +157,7 @@ abstract class AbstractUpdateBatchTest extends AbstractBatchFunctionalTest
     {
         $batch = $this->getBatch();
         $batch->add(array('q' => array('_id' => 1), 'u' => array('$set' => array('x' => 1)), 'upsert' => true));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(0, $result['nMatched']);
         $this->assertNumModified(0, $result);

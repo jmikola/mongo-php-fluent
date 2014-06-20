@@ -15,6 +15,18 @@ class CommandUpdateBatchTest extends AbstractUpdateBatchTest
     }
 
     /**
+     * @expectedException MongoWriteConcernException
+     */
+    public function testCommandFailsIfWriteConcernUsedWithStandalone()
+    {
+        $this->requiresStandalone();
+
+        $batch = $this->getBatch(array('w' => 2));
+        $batch->add(array('q' => array('_id' => 1), 'u' => array('$set' => array('x' => 1))));
+        $result = $batch->execute();
+    }
+
+    /**
      * @see AbstractUpdateBatchTest::assertNumModified()
      */
     protected function assertNumModified($nModified, $result)

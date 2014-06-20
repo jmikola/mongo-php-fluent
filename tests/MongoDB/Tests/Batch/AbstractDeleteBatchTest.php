@@ -18,7 +18,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
         $batch = $this->getBatch(array('w' => 99, 'wTimeoutMS' => 1));
         $batch->add(array('q' => array('x' => 1), 'limit' => 1));
         $batch->add(array('q' => array('x' => 2), 'limit' => 1));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(2, $result['nRemoved']);
         $this->assertNumWriteErrors(0, $result);
@@ -38,7 +38,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
         $batch->add(array('q' => array('$where' => '3rr0r'), 'limit' => 1));
         $batch->add(array('q' => array('$where' => '3rr0r'), 'limit' => 1));
         $batch->add(array('q' => array('x' => 2), 'limit' => 1));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nRemoved']);
         $this->assertNumWriteErrors(1, $result);
@@ -60,7 +60,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
         $batch->add(array('q' => array('$where' => '3rr0r'), 'limit' => 1));
         $batch->add(array('q' => array('$where' => '3rr0r'), 'limit' => 1));
         $batch->add(array('q' => array('x' => 2), 'limit' => 1));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(2, $result['nRemoved']);
         $this->assertNumWriteErrors(2, $result);
@@ -78,7 +78,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 
         $batch = $this->getBatch();
         $batch->add(array('q' => array('x' => 1), 'limit' => 1));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nRemoved']);
         $this->assertNumWriteErrors(0, $result);
@@ -100,7 +100,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 
         $batch = $this->getBatch();
         $batch->add(array('q' => array('x' => 1), 'limit' => 0));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(3, $result['nRemoved']);
         $this->assertNumWriteErrors(0, $result);
@@ -123,7 +123,7 @@ abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
         $batch = $this->getBatch();
         $batch->add(array('q' => array('x' => 1), 'limit' => 0));
         $batch->add(array('q' => array('x' => 2), 'limit' => 1));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(3, $result['nRemoved']);
         $this->assertNumWriteErrors(0, $result);

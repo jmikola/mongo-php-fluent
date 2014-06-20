@@ -43,16 +43,5 @@ abstract class AbstractBatchFunctionalTest extends BaseFunctionalTestCase
         $this->assertThat($result, $constraint);
     }
 
-    protected function executeBatch(BatchInterface $batch)
-    {
-        try {
-            $result = $batch->execute();
-        } catch (MongoWriteConcernException $e) {
-            $result = $e->getDocument();
-        }
-
-        return $result;
-    }
-
     abstract protected function getBatch(array $writeOptions = array());
 }

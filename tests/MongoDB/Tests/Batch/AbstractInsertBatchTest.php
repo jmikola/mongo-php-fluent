@@ -13,7 +13,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
         $batch = $this->getBatch(array('w' => 99, 'wTimeoutMS' => 1));
         $batch->add(array('_id' => 1, 'x' => 1));
         $batch->add(array('_id' => 2, 'x' => 2));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(2, $result['nInserted']);
         $this->assertNumWriteErrors(0, $result);
@@ -30,7 +30,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
         $batch->add(array('_id' => 1, 'x' => 1));
         $batch->add(array('_id' => 1, 'x' => 2));
         $batch->add(array('_id' => 2, 'x' => 3));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nInserted']);
         $this->assertNumWriteErrors(1, $result);
@@ -47,7 +47,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
         $batch->add(array('_id' => 1, 'x' => 2));
         $batch->add(array('_id' => 2, 'x' => 3));
         $batch->add(array('_id' => 2, 'x' => 4));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(2, $result['nInserted']);
         $this->assertNumWriteErrors(2, $result);
@@ -62,7 +62,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
     {
         $batch = $this->getBatch();
         $batch->add(array('_id' => 1, 'x' => 1));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(1, $result['nInserted']);
         $this->assertNumWriteErrors(0, $result);
@@ -78,7 +78,7 @@ abstract class AbstractInsertBatchTest extends AbstractBatchFunctionalTest
         $batch->add(array('_id' => 1, 'x' => 1));
         $batch->add(array('_id' => 2, 'x' => 2));
         $batch->add(array('_id' => 3, 'x' => 3));
-        $result = $this->executeBatch($batch);
+        $result = $batch->execute();
 
         $this->assertSame(3, $result['nInserted']);
         $this->assertNumWriteErrors(0, $result);
