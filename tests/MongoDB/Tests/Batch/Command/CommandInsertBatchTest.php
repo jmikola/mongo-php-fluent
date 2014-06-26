@@ -17,6 +17,18 @@ class CommandInsertBatchTest extends AbstractInsertBatchTest
     /**
      * @expectedException MongoWriteConcernException
      */
+    public function testCommandFailsIfJournaledWriteConcernUsedAndJournalingDisabled()
+    {
+        $this->requiresNoJournal();
+
+        $batch = $this->getBatch(array('j' => true));
+        $batch->add(array('_id' => 1));
+        $result = $batch->execute();
+    }
+
+    /**
+     * @expectedException MongoWriteConcernException
+     */
     public function testCommandFailsIfWriteConcernUsedWithStandalone()
     {
         $this->requiresStandalone();

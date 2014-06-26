@@ -54,6 +54,13 @@ abstract class BaseFunctionalTestCase extends BaseTestCase
         }
     }
 
+    protected function requiresNoJournal()
+    {
+        if ($this->isJournaled()) {
+            $this->markTestSkipped('Journaling is enabled.');
+        }
+    }
+
     protected function requiresLegacyWriteOperations()
     {
         if ($this->isWriteApiSupported()) {
@@ -87,6 +94,18 @@ abstract class BaseFunctionalTestCase extends BaseTestCase
         if ( ! $this->isWriteApiSupported()) {
             $this->markTestSkipped('Write commands are not available.');
         }
+    }
+
+    /**
+     * Checks if the client's writable connection(s) has journaling enabled.
+     *
+     * @return boolean
+     */
+    private function isJournaled()
+    {
+        $serverStatus = $this->getMongoDB()->command(array('serverStatus' => 1));
+
+        return ( ! empty($serverStatus['dur']));
     }
 
     /**
