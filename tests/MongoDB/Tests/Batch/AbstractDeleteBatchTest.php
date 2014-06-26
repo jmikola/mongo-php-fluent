@@ -6,7 +6,7 @@ use MongoDB\Batch\BatchInterface;
 
 abstract class AbstractDeleteBatchTest extends AbstractBatchFunctionalTest
 {
-    public function testWriteConcernError()
+    public function testWriteConcernTimeoutError()
     {
         $this->requiresReplicaSet();
 
