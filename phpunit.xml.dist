@@ -10,6 +10,11 @@
          syntaxCheck="false"
          bootstrap="tests/bootstrap.php"
 >
+    <php>
+        <env name="MONGODB_URI" value="mongodb://localhost:27017" />
+        <env name="MONGODB_DATABASE" value="test" />
+    </php>
+
     <testsuites>
         <testsuite name="mongo-php-fluent Test Suite">
             <directory>./tests/MongoDB/</directory>

@@ -6,4 +6,5 @@ if (!file_exists($file = __DIR__.'/../vendor/autoload.php')) {
 
 $loader = require_once $file;
 
+$loader->add('MongoDB\Stubs', __DIR__);
 $loader->add('MongoDB\Tests', __DIR__);
